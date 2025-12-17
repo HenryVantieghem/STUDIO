@@ -410,14 +410,27 @@ party_comments, party_statuses, poll_votes, party_guests, notifications
 
 ## Workflow Rules
 
-### After Each Task
-After completing each task or feature, ask the user: "Would you like me to commit these changes?"
+### Git Workflow (MANDATORY)
+**Always commit changes immediately after making them.** Do not wait or ask - just commit.
+
+1. After ANY file edit, create, or delete → commit immediately
+2. Use descriptive commit messages following conventional commits
+3. Push to origin after each commit
 
 ### Commit Format
-When committing, use descriptive messages following this pattern:
 ```
 feat: Add [feature description]
 fix: Fix [bug description]
 refactor: Refactor [component]
 docs: Update [documentation]
+style: Update styling/formatting
+chore: Update build/config
+```
+
+### Example Workflow
+```
+1. Make changes to files
+2. git add .
+3. git commit -m "feat: Add party creation flow"
+4. git push origin main
 ```
