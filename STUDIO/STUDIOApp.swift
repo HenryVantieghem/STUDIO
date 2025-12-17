@@ -11,7 +11,9 @@ import SwiftUI
 struct STUDIOApp: App {
     var body: some Scene {
         WindowGroup {
-            RootView()
+            AppLaunchWrapper {
+                RootView()
+            }
         }
     }
 }
