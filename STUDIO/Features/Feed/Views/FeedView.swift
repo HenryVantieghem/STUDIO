@@ -98,6 +98,7 @@ struct FeedView: View {
         HStack(spacing: 16) {
             // Search button
             Button {
+                HapticManager.shared.impact(.light)
                 showSearch = true
             } label: {
                 Image(systemName: "magnifyingglass")
@@ -109,6 +110,7 @@ struct FeedView: View {
 
             // Activity/Bell button with badge
             Button {
+                HapticManager.shared.impact(.light)
                 showActivity = true
             } label: {
                 ZStack(alignment: .topTrailing) {
@@ -134,6 +136,7 @@ struct FeedView: View {
 
     private var createPartyButton: some View {
         Button {
+            HapticManager.shared.impact(.medium)
             showCreateParty = true
         } label: {
             Image(systemName: "plus")
@@ -162,6 +165,7 @@ struct FeedView: View {
         HStack(spacing: 0) {
             ForEach(FeedViewModel.FeedTab.allCases) { tab in
                 Button {
+                    HapticManager.shared.impact(.light)
                     withAnimation(.easeInOut(duration: 0.2)) {
                         vm.selectedTab = tab
                     }

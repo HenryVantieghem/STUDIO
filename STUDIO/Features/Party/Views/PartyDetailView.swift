@@ -248,6 +248,7 @@ struct PartyDetailView: View {
         HStack(spacing: 0) {
             ForEach(PartyDetailViewModel.PartySection.allCases) { section in
                 Button {
+                    HapticManager.shared.impact(.light)
                     withAnimation(.easeInOut(duration: 0.2)) {
                         vm.selectedSection = section
                     }
@@ -347,6 +348,7 @@ struct PartyDetailView: View {
 
                 Button {
                     guard !newComment.isEmpty else { return }
+                    HapticManager.shared.impact(.medium)
                     let comment = newComment
                     newComment = ""
                     Task { await vm.addComment(comment) }
@@ -423,6 +425,7 @@ struct PartyDetailView: View {
         VStack(spacing: 24) {
             // Update status button
             Button {
+                HapticManager.shared.impact(.medium)
                 showStatusPicker = true
             } label: {
                 HStack(spacing: 12) {
