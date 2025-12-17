@@ -269,9 +269,8 @@ struct SettingsView: View {
         isLoadingPrivacy = true
 
         do {
-            if let user = try await profileService.getCurrentUserProfile() {
-                isPrivateAccount = user.isPrivate
-            }
+            let user = try await profileService.getCurrentUserProfile()
+            isPrivateAccount = user.isPrivate
         } catch {
             // Silently fail - default to false
         }
@@ -392,7 +391,7 @@ struct BlockedUsersView: View {
     @ViewBuilder
     private func blockedUserRow(user: User) -> some View {
         HStack(spacing: 12) {
-            CircularAvatarView(url: user.avatarUrl, size: .medium)
+            AvatarView(url: user.avatarUrl, size: .medium)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(user.username)

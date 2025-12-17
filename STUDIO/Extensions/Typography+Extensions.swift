@@ -4,6 +4,7 @@
 //
 //  Pixel Afterdark Typography System
 //  8-bit retro pixel font - VT323
+//  ✨ With Dynamic Type support for accessibility
 //
 
 import SwiftUI
@@ -14,6 +15,33 @@ import SwiftUI
 /// VT323 - A more readable pixel font with taller characters
 private let pixelFontName = "VT323"
 
+// MARK: - Dynamic Type Scaled Sizes
+
+/// Scaled font sizes for Dynamic Type accessibility support
+/// These scale proportionally with user's preferred text size
+@MainActor
+enum StudioScaledSizes {
+    // Display sizes - scale with .largeTitle
+    @ScaledMetric(relativeTo: .largeTitle) static var displayLarge: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) static var displayMedium: CGFloat = 36
+    @ScaledMetric(relativeTo: .title) static var displaySmall: CGFloat = 28
+
+    // Headline sizes - scale with .title variants
+    @ScaledMetric(relativeTo: .title2) static var headlineLarge: CGFloat = 24
+    @ScaledMetric(relativeTo: .title3) static var headlineMedium: CGFloat = 20
+    @ScaledMetric(relativeTo: .headline) static var headlineSmall: CGFloat = 18
+
+    // Body sizes - scale with .body
+    @ScaledMetric(relativeTo: .body) static var bodyLarge: CGFloat = 16
+    @ScaledMetric(relativeTo: .subheadline) static var bodyMedium: CGFloat = 14
+    @ScaledMetric(relativeTo: .footnote) static var bodySmall: CGFloat = 12
+
+    // Label sizes - scale with .caption variants
+    @ScaledMetric(relativeTo: .callout) static var labelLarge: CGFloat = 16
+    @ScaledMetric(relativeTo: .caption) static var labelMedium: CGFloat = 14
+    @ScaledMetric(relativeTo: .caption2) static var labelSmall: CGFloat = 12
+}
+
 // MARK: - Pixel Afterdark Typography
 
 /// Typography system using VT323 pixel font
@@ -22,8 +50,9 @@ private let pixelFontName = "VT323"
 enum StudioTypography {
 
     // MARK: - Display Styles (Hero Text)
+    // Note: Use scaled view modifiers for Dynamic Type support
 
-    /// Display Large - Hero text, splash screens
+    /// Display Large - Hero text, splash screens (fixed, use studioDisplayLarge() modifier for scaling)
     static let displayLarge = Font.custom(pixelFontName, size: 48)
 
     /// Display Medium - Section headers
@@ -95,109 +124,121 @@ extension Font {
     }
 }
 
-// MARK: - View Modifiers for Typography
+// MARK: - View Modifiers for Typography (Dynamic Type Enabled)
 
 extension View {
-    /// Apply display large style - Hero text
+    /// Apply display large style - Hero text (scales with Dynamic Type)
+    @MainActor
     func studioDisplayLarge() -> some View {
         self
-            .font(StudioTypography.displayLarge)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.displayLarge))
             .tracking(StudioTypography.trackingExtraWide)
             .textCase(.uppercase)
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply display medium style
+    /// Apply display medium style (scales with Dynamic Type)
+    @MainActor
     func studioDisplayMedium() -> some View {
         self
-            .font(StudioTypography.displayMedium)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.displayMedium))
             .tracking(StudioTypography.trackingWide)
             .textCase(.uppercase)
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply display small style
+    /// Apply display small style (scales with Dynamic Type)
+    @MainActor
     func studioDisplaySmall() -> some View {
         self
-            .font(StudioTypography.displaySmall)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.displaySmall))
             .tracking(StudioTypography.trackingWide)
             .textCase(.uppercase)
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply headline large style
+    /// Apply headline large style (scales with Dynamic Type)
+    @MainActor
     func studioHeadlineLarge() -> some View {
         self
-            .font(StudioTypography.headlineLarge)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.headlineLarge))
             .tracking(StudioTypography.trackingWide)
             .textCase(.uppercase)
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply headline medium style
+    /// Apply headline medium style (scales with Dynamic Type)
+    @MainActor
     func studioHeadlineMedium() -> some View {
         self
-            .font(StudioTypography.headlineMedium)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.headlineMedium))
             .tracking(StudioTypography.trackingStandard)
             .textCase(.uppercase)
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply headline small style
+    /// Apply headline small style (scales with Dynamic Type)
+    @MainActor
     func studioHeadlineSmall() -> some View {
         self
-            .font(StudioTypography.headlineSmall)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.headlineSmall))
             .tracking(StudioTypography.trackingStandard)
             .textCase(.uppercase)
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply body large style
+    /// Apply body large style (scales with Dynamic Type)
+    @MainActor
     func studioBodyLarge() -> some View {
         self
-            .font(StudioTypography.bodyLarge)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.bodyLarge))
             .tracking(StudioTypography.trackingNormal)
             .foregroundStyle(Color.studioSecondary)
     }
 
-    /// Apply body medium style
+    /// Apply body medium style (scales with Dynamic Type)
+    @MainActor
     func studioBodyMedium() -> some View {
         self
-            .font(StudioTypography.bodyMedium)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.bodyMedium))
             .tracking(StudioTypography.trackingNormal)
             .foregroundStyle(Color.studioSecondary)
     }
 
-    /// Apply body small style
+    /// Apply body small style (scales with Dynamic Type)
+    @MainActor
     func studioBodySmall() -> some View {
         self
-            .font(StudioTypography.bodySmall)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.bodySmall))
             .tracking(StudioTypography.trackingNormal)
             .foregroundStyle(Color.studioMuted)
     }
 
-    /// Apply label large style
+    /// Apply label large style (scales with Dynamic Type)
+    @MainActor
     func studioLabelLarge() -> some View {
         self
-            .font(StudioTypography.labelLarge)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.labelLarge))
             .tracking(StudioTypography.trackingStandard)
             .textCase(.uppercase)
             .foregroundStyle(Color.studioSecondary)
     }
 
-    /// Apply label medium style
+    /// Apply label medium style (scales with Dynamic Type)
+    @MainActor
     func studioLabelMedium() -> some View {
         self
-            .font(StudioTypography.labelMedium)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.labelMedium))
             .tracking(StudioTypography.trackingNormal)
             .textCase(.uppercase)
             .foregroundStyle(Color.studioMuted)
     }
 
-    /// Apply label small style
+    /// Apply label small style (scales with Dynamic Type)
+    @MainActor
     func studioLabelSmall() -> some View {
         self
-            .font(StudioTypography.labelSmall)
+            .font(.custom(pixelFontName, size: StudioScaledSizes.labelSmall))
             .tracking(StudioTypography.trackingNormal)
             .textCase(.uppercase)
             .foregroundStyle(Color.studioMuted)

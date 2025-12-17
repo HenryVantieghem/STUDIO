@@ -4,6 +4,7 @@
 //
 //  Pixel Afterdark Button Styles
 //  8-bit retro aesthetic with pixel borders
+//  ✨ With haptic feedback and interruptible animations
 //
 
 import SwiftUI
@@ -11,6 +12,39 @@ import SwiftUI
 // MARK: - Pixel Font Reference
 
 private let pixelFontName = "VT323"
+
+// MARK: - Scaled Font Sizes (Dynamic Type Support)
+
+/// Base sizes that scale with Dynamic Type
+@MainActor
+enum StudioButtonSizes {
+    @ScaledMetric(relativeTo: .body) static var primaryFont: CGFloat = 18
+    @ScaledMetric(relativeTo: .body) static var secondaryFont: CGFloat = 18
+    @ScaledMetric(relativeTo: .caption) static var tertiaryFont: CGFloat = 16
+    @ScaledMetric(relativeTo: .caption) static var ghostFont: CGFloat = 14
+    @ScaledMetric(relativeTo: .caption) static var pillFont: CGFloat = 14
+    @ScaledMetric(relativeTo: .title3) static var heroFont: CGFloat = 22
+    @ScaledMetric(relativeTo: .body) static var buttonHeight: CGFloat = 48
+    @ScaledMetric(relativeTo: .title3) static var heroHeight: CGFloat = 56
+}
+
+// MARK: - Haptic Button Wrapper
+
+/// Internal wrapper that triggers haptics on press
+private struct HapticButtonContent<Content: View>: View {
+    let configuration: ButtonStyleConfiguration
+    let isEnabled: Bool
+    let content: (ButtonStyleConfiguration) -> Content
+
+    var body: some View {
+        content(configuration)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed && isEnabled {
+                    HapticManager.shared.lightTap()
+                }
+            }
+    }
+}
 
 // MARK: - Studio Button Styles
 
@@ -20,12 +54,12 @@ struct StudioPrimaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.custom(pixelFontName, size: 18))
+            .font(.custom(pixelFontName, size: StudioButtonSizes.primaryFont))
             .tracking(StudioTypography.trackingStandard)
             .textCase(.uppercase)
             .foregroundStyle(isEnabled ? Color.studioBlack : Color.studioMuted)
             .frame(maxWidth: .infinity)
-            .frame(height: 48)
+            .frame(minHeight: StudioButtonSizes.buttonHeight)
             .background {
                 if isEnabled {
                     Color.studioPrimary
@@ -41,7 +75,12 @@ struct StudioPrimaryButtonStyle: ButtonStyle {
             }
             .opacity(configuration.isPressed ? 0.7 : 1.0)
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed && isEnabled {
+                    HapticManager.shared.mediumTap()
+                }
+            }
     }
 }
 
@@ -51,12 +90,12 @@ struct StudioSecondaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.custom(pixelFontName, size: 18))
+            .font(.custom(pixelFontName, size: StudioButtonSizes.secondaryFont))
             .tracking(StudioTypography.trackingStandard)
             .textCase(.uppercase)
             .foregroundStyle(isEnabled ? Color.studioPrimary : Color.studioMuted)
             .frame(maxWidth: .infinity)
-            .frame(height: 48)
+            .frame(minHeight: StudioButtonSizes.buttonHeight)
             .background(Color.studioBlack)
             .overlay {
                 // Pixel border - single line
@@ -68,7 +107,12 @@ struct StudioSecondaryButtonStyle: ButtonStyle {
             }
             .opacity(configuration.isPressed ? 0.6 : 1.0)
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed && isEnabled {
+                    HapticManager.shared.lightTap()
+                }
+            }
     }
 }
 
@@ -78,12 +122,17 @@ struct StudioTertiaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.custom(pixelFontName, size: 16))
+            .font(.custom(pixelFontName, size: StudioButtonSizes.tertiaryFont))
             .tracking(StudioTypography.trackingNormal)
             .textCase(.uppercase)
             .foregroundStyle(isEnabled ? Color.studioSecondary : Color.studioMuted)
             .opacity(configuration.isPressed ? 0.5 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .animation(.spring(response: 0.15, dampingFraction: 0.8), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed && isEnabled {
+                    HapticManager.shared.softTap()
+                }
+            }
     }
 }
 
@@ -93,7 +142,7 @@ struct StudioGhostButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.custom(pixelFontName, size: 14))
+            .font(.custom(pixelFontName, size: StudioButtonSizes.ghostFont))
             .tracking(StudioTypography.trackingNormal)
             .textCase(.uppercase)
             .foregroundStyle(isEnabled ? Color.studioMuted : Color.studioMuted.opacity(0.5))
@@ -105,7 +154,12 @@ struct StudioGhostButtonStyle: ButtonStyle {
                     .stroke(Color.studioLine, lineWidth: 1)
             }
             .opacity(configuration.isPressed ? 0.5 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .animation(.spring(response: 0.15, dampingFraction: 0.8), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed && isEnabled {
+                    HapticManager.shared.softTap()
+                }
+            }
     }
 }
 
@@ -115,7 +169,7 @@ struct StudioPillButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.custom(pixelFontName, size: 14))
+            .font(.custom(pixelFontName, size: StudioButtonSizes.pillFont))
             .tracking(StudioTypography.trackingNormal)
             .textCase(.uppercase)
             .foregroundStyle(isSelected ? Color.studioBlack : Color.studioSecondary)
@@ -130,7 +184,12 @@ struct StudioPillButtonStyle: ButtonStyle {
                     )
             }
             .opacity(configuration.isPressed ? 0.6 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .animation(.spring(response: 0.15, dampingFraction: 0.8), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed {
+                    HapticManager.shared.selectionChanged()
+                }
+            }
     }
 }
 
@@ -150,7 +209,12 @@ struct StudioIconButtonStyle: ButtonStyle {
             }
             .opacity(configuration.isPressed ? 0.5 : 1.0)
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .animation(.spring(response: 0.15, dampingFraction: 0.7), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed {
+                    HapticManager.shared.lightTap()
+                }
+            }
     }
 }
 
@@ -160,12 +224,12 @@ struct StudioDestructiveButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.custom(pixelFontName, size: 18))
+            .font(.custom(pixelFontName, size: StudioButtonSizes.primaryFont))
             .tracking(StudioTypography.trackingStandard)
             .textCase(.uppercase)
             .foregroundStyle(isEnabled ? Color.studioError : Color.studioMuted)
             .frame(maxWidth: .infinity)
-            .frame(height: 48)
+            .frame(minHeight: StudioButtonSizes.buttonHeight)
             .background(Color.studioBlack)
             .overlay {
                 Rectangle()
@@ -176,7 +240,12 @@ struct StudioDestructiveButtonStyle: ButtonStyle {
             }
             .opacity(configuration.isPressed ? 0.6 : 1.0)
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed && isEnabled {
+                    HapticManager.shared.warning()
+                }
+            }
     }
 }
 
@@ -186,12 +255,12 @@ struct StudioHeroButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.custom(pixelFontName, size: 22))
+            .font(.custom(pixelFontName, size: StudioButtonSizes.heroFont))
             .tracking(StudioTypography.trackingWide)
             .textCase(.uppercase)
             .foregroundStyle(isEnabled ? Color.studioBlack : Color.studioMuted)
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(minHeight: StudioButtonSizes.heroHeight)
             .background {
                 if isEnabled {
                     Color.studioPrimary
@@ -211,7 +280,12 @@ struct StudioHeroButtonStyle: ButtonStyle {
             }
             .opacity(configuration.isPressed ? 0.8 : 1.0)
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed && isEnabled {
+                    HapticManager.shared.heavyTap()
+                }
+            }
     }
 }
 

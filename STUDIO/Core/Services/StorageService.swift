@@ -61,6 +61,30 @@ final class StorageService {
         return UploadResult(path: fileName, publicUrl: publicUrl)
     }
 
+    // MARK: - Party Cover Upload
+
+    func uploadPartyCover(partyId: UUID, imageData: Data) async throws -> String {
+        let fileName = "\(partyId.uuidString)/cover.jpg"
+
+        try await supabase.storage
+            .from(Bucket.partyMedia.rawValue)
+            .upload(
+                fileName,
+                data: imageData,
+                options: FileOptions(
+                    contentType: "image/jpeg",
+                    upsert: true
+                )
+            )
+
+        let publicUrl = try supabase.storage
+            .from(Bucket.partyMedia.rawValue)
+            .getPublicURL(path: fileName)
+            .absoluteString
+
+        return publicUrl
+    }
+
     // MARK: - Party Media Upload
 
     func uploadPartyMedia(

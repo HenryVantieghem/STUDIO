@@ -8,6 +8,7 @@
 
 import SwiftUI
 import PhotosUI
+import Supabase
 
 // MARK: - Party Edit Sheet
 
@@ -47,11 +48,19 @@ struct PartyEditSheet: View {
     @State private var error: Error?
     @State private var showError = false
 
-    // Check if current user is creator
-    private var isCreator: Bool {
-        guard let userId = try? supabase.auth.session.user.id,
-              let hosts = party.hosts else { return false }
-        return hosts.contains { $0.userId == userId && $0.role == .creator }
+    // User role tracking
+    @State private var isCreator: Bool = false
+    @State private var currentUserId: UUID?
+
+    /// Check if current user is creator
+    private func checkUserRole() async {
+        currentUserId = try? await supabase.auth.session.user.id
+        guard let userId = currentUserId,
+              let hosts = party.hosts else {
+            isCreator = false
+            return
+        }
+        isCreator = hosts.contains { $0.userId == userId && $0.role == .creator }
     }
 
     init(party: Party, onSave: ((Party) -> Void)? = nil, onDelete: (() -> Void)? = nil) {
@@ -186,6 +195,9 @@ struct PartyEditSheet: View {
                 Task {
                     await loadCoverImage(newValue)
                 }
+            }
+            .task {
+                await checkUserRole()
             }
         }
         .tint(Color.studioChrome)
@@ -615,7 +627,7 @@ struct PartyEditSheet: View {
 
             // Upload new cover if changed
             if let newImage = newCoverImage {
-                let storageService = StorageService()
+                let storageService = StorageService.shared
                 if let imageData = newImage.jpegData(compressionQuality: 0.8) {
                     let coverUrl = try await storageService.uploadPartyCover(
                         partyId: party.id,
@@ -626,16 +638,25 @@ struct PartyEditSheet: View {
             }
 
             // Update party in database
+            var updates: [String: AnyEncodable] = [
+                "title": AnyEncodable(title),
+                "party_date": AnyEncodable(ISO8601DateFormatter().string(from: partyDate)),
+                "is_public": AnyEncodable(isPublic)
+            ]
+
+            if !description.isEmpty {
+                updates["description"] = AnyEncodable(description)
+            }
+            if !location.isEmpty {
+                updates["location"] = AnyEncodable(location)
+            }
+            if let coverUrl = updatedParty.coverImageUrl {
+                updates["cover_image_url"] = AnyEncodable(coverUrl)
+            }
+
             try await supabase
                 .from("parties")
-                .update([
-                    "title": title,
-                    "description": description.isEmpty ? nil : description,
-                    "location": location.isEmpty ? nil : location,
-                    "party_date": ISO8601DateFormatter().string(from: partyDate),
-                    "is_public": isPublic,
-                    "cover_image_url": updatedParty.coverImageUrl
-                ] as [String: Any?])
+                .update(updates)
                 .eq("id", value: party.id.uuidString)
                 .execute()
 

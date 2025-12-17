@@ -407,8 +407,8 @@ struct PartyDetailView: View {
             } else {
                 LazyVStack(spacing: 20) {
                     ForEach(vm.polls) { poll in
-                        PollCard(poll: poll) { option in
-                            Task { await vm.vote(on: poll, option: option) }
+                        PollCard(poll: poll) { optionId in
+                            Task { await vm.vote(on: poll, optionId: optionId) }
                         }
                     }
                 }
@@ -483,135 +483,6 @@ struct PartyMediaThumbnail: View {
             }
         }
         .aspectRatio(1, contentMode: .fill)
-    }
-}
-
-struct CommentRow: View {
-    let comment: PartyComment
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            AvatarView(url: comment.user?.avatarUrl, size: .medium)
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Text((comment.user?.displayName ?? "USER").uppercased())
-                        .font(StudioTypography.labelSmall)
-                        .tracking(StudioTypography.trackingNormal)
-                        .foregroundStyle(Color.studioPrimary)
-
-                    Text(comment.createdAt, style: .relative)
-                        .font(StudioTypography.labelSmall)
-                        .foregroundStyle(Color.studioMuted)
-                }
-
-                Text(comment.content)
-                    .font(StudioTypography.bodySmall)
-                    .foregroundStyle(Color.studioSecondary)
-            }
-
-            Spacer()
-        }
-        .padding(24)
-    }
-}
-
-struct PollCard: View {
-    let poll: PartyPoll
-    let onVote: (PollOption) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Question
-            Text(poll.question.uppercased())
-                .font(StudioTypography.headlineSmall)
-                .tracking(StudioTypography.trackingNormal)
-                .foregroundStyle(Color.studioPrimary)
-
-            // Options
-            if let options = poll.options {
-                ForEach(options) { option in
-                    PollOptionRow(option: option, totalVotes: poll.totalVotes ?? 0) {
-                        onVote(option)
-                    }
-                }
-            }
-
-            // Footer
-            HStack {
-                if let creator = poll.creator {
-                    Text("BY \(creator.displayName?.uppercased() ?? "USER")")
-                        .font(StudioTypography.labelSmall)
-                        .tracking(StudioTypography.trackingNormal)
-                        .foregroundStyle(Color.studioMuted)
-                }
-
-                Spacer()
-
-                Text("\(poll.totalVotes ?? 0) VOTES")
-                    .font(StudioTypography.labelSmall)
-                    .tracking(StudioTypography.trackingNormal)
-                    .foregroundStyle(Color.studioMuted)
-            }
-        }
-        .padding(20)
-        .background(Color.studioSurface)
-        .overlay {
-            Rectangle()
-                .stroke(Color.studioLine, lineWidth: 0.5)
-        }
-    }
-}
-
-struct PollOptionRow: View {
-    let option: PollOption
-    let totalVotes: Int
-    let onVote: () -> Void
-
-    var percentage: Double {
-        guard totalVotes > 0 else { return 0 }
-        return Double(option.voteCount) / Double(totalVotes)
-    }
-
-    var body: some View {
-        Button(action: onVote) {
-            ZStack(alignment: .leading) {
-                // Progress bar
-                GeometryReader { geo in
-                    Rectangle()
-                        .fill(Color.studioChrome.opacity(0.2))
-                        .frame(width: geo.size.width * percentage)
-                }
-
-                // Content
-                HStack {
-                    if let user = option.optionUser {
-                        AvatarView(url: user.avatarUrl, size: .tiny)
-                        Text((user.displayName ?? "USER").uppercased())
-                            .font(StudioTypography.labelSmall)
-                            .tracking(StudioTypography.trackingNormal)
-                    } else if let text = option.optionText {
-                        Text(text.uppercased())
-                            .font(StudioTypography.labelSmall)
-                            .tracking(StudioTypography.trackingNormal)
-                    }
-
-                    Spacer()
-
-                    Text("\(Int(percentage * 100))%")
-                        .font(StudioTypography.labelSmall)
-                }
-                .padding(14)
-                .foregroundStyle(Color.studioPrimary)
-            }
-            .frame(height: 48)
-            .background(Color.studioBlack.opacity(0.3))
-            .overlay {
-                Rectangle()
-                    .stroke(Color.studioLine, lineWidth: 0.5)
-            }
-        }
-        .buttonStyle(.plain)
     }
 }
 

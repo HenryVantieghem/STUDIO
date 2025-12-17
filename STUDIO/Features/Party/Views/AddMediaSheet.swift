@@ -10,6 +10,7 @@ import SwiftUI
 import PhotosUI
 import AVFoundation
 import UIKit
+import Combine
 
 // MARK: - Add Media Sheet
 
@@ -416,7 +417,7 @@ struct CameraCaptureView: View {
             Color.studioBlack.ignoresSafeArea()
 
             // Camera preview
-            CameraPreviewView(session: cameraModel.session)
+            AddMediaCameraPreview(session: cameraModel.session)
                 .ignoresSafeArea()
 
             // Controls overlay
@@ -561,8 +562,8 @@ extension CameraModel: AVCapturePhotoCaptureDelegate {
 
 // MARK: - Camera Preview View
 
-/// UIKit camera preview wrapper
-struct CameraPreviewView: UIViewRepresentable {
+/// UIKit camera preview wrapper for AddMediaSheet
+struct AddMediaCameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
 
     func makeUIView(context: Context) -> UIView {

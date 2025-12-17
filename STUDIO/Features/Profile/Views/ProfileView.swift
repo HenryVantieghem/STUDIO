@@ -141,7 +141,7 @@ struct ProfileView: View {
                         .frame(width: 96, height: 96)
 
                     // Avatar
-                    CircularAvatarView(url: user.avatarUrl, size: .xlarge, showBorder: false)
+                    AvatarView(url: user.avatarUrl, size: .xlarge, showBorder: false)
                 }
 
                 // Stats row
@@ -284,7 +284,7 @@ struct ProfileView: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                .buttonStyle(vm.isFollowing ? ProfileActionButtonStyle() : ProfilePrimaryActionButtonStyle())
+                .buttonStyle(ProfileActionButtonStyle(isPrimary: !vm.isFollowing))
 
                 // Message
                 Button {
@@ -435,29 +435,21 @@ struct ProfileView: View {
 // MARK: - Profile Action Button Style
 
 struct ProfileActionButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .semibold, design: .monospaced))
-            .tracking(0.5)
-            .foregroundStyle(Color.studioPrimary)
-            .frame(height: 36)
-            .background(Color.studioSurface)
-            .overlay {
-                Rectangle()
-                    .stroke(Color.studioLine, lineWidth: 0.5)
-            }
-            .opacity(configuration.isPressed ? 0.7 : 1.0)
-    }
-}
+    var isPrimary: Bool = false
 
-struct ProfilePrimaryActionButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 13, weight: .semibold, design: .monospaced))
             .tracking(0.5)
-            .foregroundStyle(Color.studioBlack)
+            .foregroundStyle(isPrimary ? Color.studioBlack : Color.studioPrimary)
             .frame(height: 36)
-            .background(Color.studioChrome)
+            .background(isPrimary ? Color.studioChrome : Color.studioSurface)
+            .overlay {
+                if !isPrimary {
+                    Rectangle()
+                        .stroke(Color.studioLine, lineWidth: 0.5)
+                }
+            }
             .opacity(configuration.isPressed ? 0.7 : 1.0)
     }
 }
@@ -558,7 +550,7 @@ struct MediaGridCell: View {
             ZStack {
                 Color.studioSurface
 
-                if let url = URL(string: media.mediaUrl) {
+                if let url = URL(string: media.url) {
                     AsyncImage(url: url) { image in
                         image
                             .resizable()
@@ -842,7 +834,7 @@ struct UserRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            CircularAvatarView(url: user.avatarUrl, size: .medium)
+            AvatarView(url: user.avatarUrl, size: .medium)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(user.username)
@@ -864,7 +856,7 @@ struct UserRowView: View {
                 Text(isFollowing ? "FOLLOWING" : "FOLLOW")
                     .font(.system(size: 11, weight: .semibold, design: .monospaced))
             }
-            .buttonStyle(isFollowing ? ProfileActionButtonStyle() : ProfilePrimaryActionButtonStyle())
+            .buttonStyle(ProfileActionButtonStyle(isPrimary: !isFollowing))
             .frame(width: 90)
         }
     }

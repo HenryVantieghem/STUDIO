@@ -4,6 +4,7 @@
 //
 //  Pixel Afterdark Empty States
 //  8-bit retro messaging with pixel icons
+//  ✨ With entrance animations and Dynamic Type
 //
 
 import SwiftUI
@@ -11,6 +12,15 @@ import SwiftUI
 // MARK: - Pixel Font Reference
 
 private let pixelFontName = "VT323"
+
+// MARK: - Scaled Sizes for Empty States
+
+@MainActor
+private enum EmptyStateSizes {
+    @ScaledMetric(relativeTo: .title3) static var iconSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .title3) static var titleSize: CGFloat = 20
+    @ScaledMetric(relativeTo: .body) static var messageSize: CGFloat = 14
+}
 
 // MARK: - Empty State View
 
@@ -22,36 +32,65 @@ struct EmptyStateView: View {
     var actionTitle: String?
     var action: (() -> Void)?
 
+    // Animation states
+    @State private var iconVisible = false
+    @State private var textVisible = false
+    @State private var buttonVisible = false
+    @State private var iconPulse = false
+
     var body: some View {
         VStack(spacing: 24) {
-            // Icon - thin, minimal
+            // Icon - thin, minimal with entrance animation
             Image(systemName: icon)
-                .font(.system(size: 40, weight: .ultraLight))
+                .font(.system(size: EmptyStateSizes.iconSize, weight: .ultraLight))
                 .foregroundStyle(Color.studioMuted)
+                .opacity(iconVisible ? 1 : 0)
+                .scaleEffect(iconVisible ? 1 : 0.8)
+                .scaleEffect(iconPulse ? 1.05 : 1.0)
 
             // Text - centered, pixel font
             VStack(spacing: 14) {
                 Text(title.uppercased())
-                    .font(.custom(pixelFontName, size: 20))
+                    .font(.custom(pixelFontName, size: EmptyStateSizes.titleSize))
                     .tracking(StudioTypography.trackingWide)
                     .foregroundStyle(Color.studioPrimary)
 
                 Text(message)
-                    .font(.custom(pixelFontName, size: 14))
+                    .font(.custom(pixelFontName, size: EmptyStateSizes.messageSize))
                     .tracking(StudioTypography.trackingNormal)
                     .foregroundStyle(Color.studioMuted)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
             }
+            .opacity(textVisible ? 1 : 0)
+            .offset(y: textVisible ? 0 : 10)
 
             // Action Button
             if let actionTitle, let action {
                 Button(actionTitle.uppercased(), action: action)
                     .buttonStyle(.studioSecondary)
                     .frame(width: 180)
+                    .opacity(buttonVisible ? 1 : 0)
+                    .offset(y: buttonVisible ? 0 : 10)
             }
         }
         .padding(32)
+        .onAppear {
+            // Staggered entrance animation
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                iconVisible = true
+            }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.1)) {
+                textVisible = true
+            }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.2)) {
+                buttonVisible = true
+            }
+            // Subtle breathing animation on icon
+            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true).delay(0.5)) {
+                iconPulse = true
+            }
+        }
     }
 }
 
@@ -144,29 +183,36 @@ struct ErrorView: View {
     var retryAction: (() async -> Void)?
 
     @State private var isRetrying = false
+    @State private var isVisible = false
+    @State private var iconShake = false
 
     var body: some View {
         VStack(spacing: 24) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 36, weight: .ultraLight))
+                .font(.system(size: EmptyStateSizes.iconSize, weight: .ultraLight))
                 .foregroundStyle(Color.studioError)
+                .rotationEffect(.degrees(iconShake ? -5 : 5))
+                .opacity(isVisible ? 1 : 0)
+                .scaleEffect(isVisible ? 1 : 0.8)
 
             VStack(spacing: 14) {
                 Text("ERROR")
-                    .font(.custom(pixelFontName, size: 20))
+                    .font(.custom(pixelFontName, size: EmptyStateSizes.titleSize))
                     .tracking(StudioTypography.trackingWide)
                     .foregroundStyle(Color.studioPrimary)
 
                 Text(error.localizedDescription)
-                    .font(.custom(pixelFontName, size: 14))
+                    .font(.custom(pixelFontName, size: EmptyStateSizes.messageSize))
                     .tracking(StudioTypography.trackingNormal)
                     .foregroundStyle(Color.studioMuted)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
             }
+            .opacity(isVisible ? 1 : 0)
 
             if let retry = retryAction {
                 Button {
+                    HapticManager.shared.mediumTap()
                     isRetrying = true
                     Task {
                         await retry()
@@ -178,37 +224,26 @@ struct ErrorView: View {
                             PixelLoadingIndicator()
                         } else {
                             Text("RETRY")
-                                .font(.custom(pixelFontName, size: 18))
-                                .tracking(StudioTypography.trackingStandard)
                         }
                     }
                     .frame(width: 140, height: 44)
                 }
                 .buttonStyle(.studioSecondary)
                 .disabled(isRetrying)
+                .opacity(isVisible ? 1 : 0)
             }
         }
         .padding(32)
-    }
-}
-
-// MARK: - Loading Button Content
-
-/// Button content with loading state
-struct LoadingButtonContent: View {
-    let title: String
-    var isLoading: Bool = false
-
-    var body: some View {
-        HStack(spacing: 8) {
-            if isLoading {
-                PixelLoadingIndicator()
-            } else {
-                Text(title)
-                    .font(.custom(pixelFontName, size: 18))
-                    .tracking(StudioTypography.trackingStandard)
-                    .textCase(.uppercase)
+        .onAppear {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                isVisible = true
             }
+            // Subtle shake animation on error icon
+            withAnimation(.easeInOut(duration: 0.15).repeatCount(3, autoreverses: true).delay(0.3)) {
+                iconShake = true
+            }
+            // Haptic feedback for error
+            HapticManager.shared.error()
         }
     }
 }

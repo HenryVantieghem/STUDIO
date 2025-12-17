@@ -170,9 +170,9 @@ final class PartyDetailViewModel {
         }
     }
 
-    func vote(on poll: PartyPoll, option: PollOption) async {
+    func vote(on poll: PartyPoll, optionId: UUID) async {
         do {
-            try await socialService.vote(pollId: poll.id, optionId: option.id)
+            try await socialService.vote(pollId: poll.id, optionId: optionId)
             // Refresh polls to get updated counts
             polls = try await socialService.getPolls(partyId: party.id)
         } catch {

@@ -121,6 +121,163 @@ struct SkeletonView: View {
     }
 }
 
+// MARK: - Layout-Specific Skeletons
+
+/// Party card skeleton that matches actual PartyCard layout
+struct PartyCardSkeleton: View {
+    @State private var isAnimating = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Cover image placeholder
+            Rectangle()
+                .fill(Color.studioSurface)
+                .frame(height: 160)
+                .shimmer(isAnimating: isAnimating)
+
+            // Content area
+            VStack(alignment: .leading, spacing: 12) {
+                // Title
+                SkeletonView(width: 180, height: 22)
+
+                // Host info
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(Color.studioSurface)
+                        .frame(width: 24, height: 24)
+                    SkeletonView(width: 100, height: 14)
+                }
+
+                // Date and location
+                HStack(spacing: 16) {
+                    SkeletonView(width: 80, height: 12)
+                    SkeletonView(width: 60, height: 12)
+                }
+
+                // Stats row
+                HStack(spacing: 24) {
+                    SkeletonView(width: 40, height: 16)
+                    SkeletonView(width: 40, height: 16)
+                    SkeletonView(width: 40, height: 16)
+                }
+            }
+            .padding(16)
+        }
+        .background(Color.studioSurface)
+        .overlay {
+            Rectangle()
+                .stroke(Color.studioLine, lineWidth: 0.5)
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                isAnimating = true
+            }
+        }
+    }
+}
+
+/// User row skeleton for lists
+struct UserRowSkeleton: View {
+    var body: some View {
+        HStack(spacing: 16) {
+            // Avatar
+            Rectangle()
+                .fill(Color.studioSurface)
+                .frame(width: 48, height: 48)
+
+            // Text content
+            VStack(alignment: .leading, spacing: 8) {
+                SkeletonView(width: 120, height: 16)
+                SkeletonView(width: 80, height: 12)
+            }
+
+            Spacer()
+
+            // Action button placeholder
+            SkeletonView(width: 70, height: 32)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+}
+
+/// Comment skeleton for comment lists
+struct CommentSkeleton: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            // Avatar
+            Rectangle()
+                .fill(Color.studioSurface)
+                .frame(width: 36, height: 36)
+
+            VStack(alignment: .leading, spacing: 8) {
+                // Username and time
+                HStack(spacing: 8) {
+                    SkeletonView(width: 80, height: 14)
+                    SkeletonView(width: 40, height: 12)
+                }
+
+                // Comment text (multiple lines)
+                SkeletonView(height: 14)
+                SkeletonView(width: 200, height: 14)
+            }
+        }
+        .padding(16)
+    }
+}
+
+/// Media grid skeleton
+struct MediaGridSkeleton: View {
+    let columns = 3
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: columns), spacing: 2) {
+            ForEach(0..<9, id: \.self) { _ in
+                Rectangle()
+                    .fill(Color.studioSurface)
+                    .aspectRatio(1, contentMode: .fill)
+                    .shimmer(isAnimating: true)
+            }
+        }
+    }
+}
+
+/// Feed loading skeleton - matches FeedView layout
+struct FeedSkeleton: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                ForEach(0..<3, id: \.self) { _ in
+                    PartyCardSkeleton()
+                }
+            }
+            .padding(16)
+        }
+        .background(Color.studioBlack)
+    }
+}
+
+// MARK: - Shimmer Modifier
+
+extension View {
+    func shimmer(isAnimating: Bool) -> some View {
+        self.overlay {
+            LinearGradient(
+                colors: [
+                    .clear,
+                    Color.studioLine.opacity(0.3),
+                    .clear
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .offset(x: isAnimating ? 200 : -200)
+            .animation(.linear(duration: 1.5).repeatForever(autoreverses: false), value: isAnimating)
+        }
+        .clipped()
+    }
+}
+
 // MARK: - Loading Button Content
 
 /// Content view for buttons that are loading

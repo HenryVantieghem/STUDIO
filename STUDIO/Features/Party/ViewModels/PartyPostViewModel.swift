@@ -47,13 +47,16 @@ final class PartyPostViewModel {
         polls.filter { $0.isActive }
     }
 
+    private(set) var currentUserId: UUID?
+
     var currentUserStatus: PartyStatus? {
         guard let userId = currentUserId else { return nil }
         return statuses.first { $0.userId == userId }
     }
 
-    private var currentUserId: UUID? {
-        try? supabase.auth.session.user.id
+    /// Load current user ID asynchronously
+    func loadCurrentUser() async {
+        currentUserId = try? await supabase.auth.session.user.id
     }
 
     // MARK: - Initialization
@@ -66,6 +69,9 @@ final class PartyPostViewModel {
 
     /// Load all party data in parallel
     func loadPartyData() async {
+        // Load current user first
+        await loadCurrentUser()
+
         // Set loading states
         isLoadingMedia = true
         isLoadingComments = true
