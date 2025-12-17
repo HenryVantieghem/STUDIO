@@ -17,6 +17,7 @@ struct PartyDetailView: View {
     @State private var showAddMedia = false
     @State private var showCreatePoll = false
     @State private var showStatusPicker = false
+    @State private var showInviteGuests = false
     @State private var newComment = ""
 
     @Environment(\.dismiss) private var dismiss
@@ -64,6 +65,12 @@ struct PartyDetailView: View {
                             Label("CREATE POLL", systemImage: "chart.bar.doc.horizontal")
                         }
 
+                        Button {
+                            showInviteGuests = true
+                        } label: {
+                            Label("INVITE GUESTS", systemImage: "person.badge.plus")
+                        }
+
                         Divider()
 
                         Button(role: .destructive) {
@@ -73,9 +80,11 @@ struct PartyDetailView: View {
                         }
                     }
 
-                    Button {
-                        // Share party
-                    } label: {
+                    ShareLink(
+                        item: vm.shareURL,
+                        subject: Text(vm.party.title),
+                        message: Text("Join me at \(vm.party.title)")
+                    ) {
                         Label("SHARE", systemImage: "square.and.arrow.up")
                     }
                 } label: {
@@ -96,11 +105,35 @@ struct PartyDetailView: View {
         }
         .task {
             await vm.loadPartyDetails()
+            await vm.subscribeToRealtimeUpdates()
+        }
+        .onDisappear {
+            Task {
+                await vm.unsubscribeFromRealtimeUpdates()
+            }
         }
         .alert("ERROR", isPresented: $vm.showError) {
             Button("OK") { vm.showError = false }
         } message: {
             Text(vm.error?.localizedDescription ?? "An error occurred")
+        }
+        .sheet(isPresented: $showAddMedia) {
+            AddMediaSheet(partyId: party.id) { media in
+                vm.media.insert(contentsOf: media, at: 0)
+            }
+        }
+        .sheet(isPresented: $showCreatePoll) {
+            CreatePollView(partyId: party.id) { poll in
+                vm.polls.insert(poll, at: 0)
+            }
+        }
+        .sheet(isPresented: $showInviteGuests) {
+            InviteGuestsView(partyId: party.id)
+        }
+        .sheet(isPresented: $showStatusPicker) {
+            PartyStatusSheet(partyId: party.id) { status in
+                vm.statuses = [status] + vm.statuses.filter { $0.userId != status.userId }
+            }
         }
     }
 

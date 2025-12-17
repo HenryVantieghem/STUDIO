@@ -30,10 +30,12 @@ final class PartyDetailViewModel {
     private let partyService = PartyService()
     private let mediaService = MediaService()
     private let socialService = SocialService()
+    private let realtimeService = RealtimeService.shared
 
     private var mediaOffset = 0
     private var commentsOffset = 0
     private let pageSize = 20
+    private var isSubscribedToRealtime = false
 
     // MARK: - Sections
 
@@ -207,6 +209,109 @@ final class PartyDetailViewModel {
         }
     }
 
+    // MARK: - Realtime Subscriptions
+
+    /// Subscribe to realtime updates for this party
+    func subscribeToRealtimeUpdates() async {
+        guard !isSubscribedToRealtime else { return }
+        isSubscribedToRealtime = true
+
+        log.info("Subscribing to realtime for party: \(party.id)", category: .realtime)
+
+        await realtimeService.subscribeToParty(
+            party.id,
+            onComment: { [weak self] comment, action in
+                self?.handleCommentUpdate(comment, action: action)
+            },
+            onStatus: { [weak self] status, action in
+                self?.handleStatusUpdate(status, action: action)
+            },
+            onPollVote: { [weak self] vote, action in
+                self?.handlePollVoteUpdate(vote, action: action)
+            },
+            onGuestUpdate: { [weak self] guest, action in
+                self?.handleGuestUpdate(guest, action: action)
+            }
+        )
+    }
+
+    /// Unsubscribe from realtime updates
+    func unsubscribeFromRealtimeUpdates() async {
+        guard isSubscribedToRealtime else { return }
+        isSubscribedToRealtime = false
+
+        log.info("Unsubscribing from realtime for party: \(party.id)", category: .realtime)
+        await realtimeService.unsubscribeFromParty(party.id)
+    }
+
+    // MARK: - Realtime Handlers
+
+    private func handleCommentUpdate(_ comment: PartyComment, action: ChangeAction) {
+        switch action {
+        case .insert:
+            // Add new comment if not already present
+            if !comments.contains(where: { $0.id == comment.id }) {
+                comments.insert(comment, at: 0)
+                log.debug("New comment received: \(comment.id)", category: .realtime)
+            }
+        case .update:
+            // Update existing comment
+            if let index = comments.firstIndex(where: { $0.id == comment.id }) {
+                comments[index] = comment
+            }
+        case .delete:
+            // Remove deleted comment
+            comments.removeAll { $0.id == comment.id }
+        }
+    }
+
+    private func handleStatusUpdate(_ status: PartyStatus, action: ChangeAction) {
+        switch action {
+        case .insert:
+            // Replace existing status from same user or add new
+            statuses.removeAll { $0.userId == status.userId && $0.statusType == status.statusType }
+            statuses.insert(status, at: 0)
+            log.debug("New status received: \(status.statusType.label)", category: .realtime)
+        case .update:
+            if let index = statuses.firstIndex(where: { $0.id == status.id }) {
+                statuses[index] = status
+            }
+        case .delete:
+            statuses.removeAll { $0.id == status.id }
+        }
+    }
+
+    private func handlePollVoteUpdate(_ vote: PollVote, action: ChangeAction) {
+        // Refresh polls to get updated vote counts
+        Task {
+            do {
+                polls = try await socialService.getPolls(partyId: party.id)
+                log.debug("Poll votes updated", category: .realtime)
+            } catch {
+                log.error(error, category: .realtime)
+            }
+        }
+    }
+
+    private func handleGuestUpdate(_ guest: PartyGuest, action: ChangeAction) {
+        switch action {
+        case .insert:
+            if var guests = party.guests, !guests.contains(where: { $0.id == guest.id }) {
+                guests.append(guest)
+                party.guests = guests
+                log.debug("New guest added: \(guest.id)", category: .realtime)
+            }
+        case .update:
+            if var guests = party.guests,
+               let index = guests.firstIndex(where: { $0.id == guest.id }) {
+                guests[index] = guest
+                party.guests = guests
+            }
+        case .delete:
+            party.guests?.removeAll { $0.id == guest.id }
+        }
+    }
+
     // MARK: - Computed Properties
 
     var isHost: Bool {
@@ -234,5 +339,10 @@ final class PartyDetailViewModel {
         let vibeStatuses = statuses.filter { $0.statusType == .vibeCheck || $0.statusType == .drunkMeter }
         guard !vibeStatuses.isEmpty else { return 0 }
         return vibeStatuses.map(\.value).reduce(0, +) / vibeStatuses.count
+    }
+
+    var shareURL: URL {
+        // Deep link URL for sharing party
+        URL(string: "studio://party/\(party.id.uuidString)")!
     }
 }

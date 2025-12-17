@@ -18,7 +18,6 @@ enum Route: Hashable {
     case editParty(partyId: UUID)
     case inviteGuests(partyId: UUID)
     case partyMembers(partyId: UUID)
-    case partySettings(partyId: UUID)
 
     // MARK: - Social Routes
     case createPoll(partyId: UUID)
@@ -34,9 +33,6 @@ enum Route: Hashable {
 
     // MARK: - Settings Routes
     case settings
-    case notificationSettings
-    case privacySettings
-    case about
 }
 
 /// Tabs in the main tab bar

@@ -2,7 +2,7 @@
 //  EditProfileView.swift
 //  STUDIO
 //
-//  Created by Claude on 12/16/25.
+//  Pixel Afterdark Design System - 8-bit retro, sharp edges
 //
 
 import SwiftUI
@@ -58,30 +58,35 @@ struct EditProfileView: View {
                             }
                         } label: {
                             if isSaving {
-                                ProgressView()
-                                    .tint(Color.studioBlack)
+                                PixelLoadingIndicator()
                             } else {
-                                Text("Save Changes")
+                                Text("SAVE CHANGES")
+                                    .font(StudioTypography.labelLarge)
+                                    .tracking(StudioTypography.trackingWide)
                                     .frame(maxWidth: .infinity)
                             }
                         }
-                        .buttonStyle(.glassProminent)
+                        .buttonStyle(.studioPrimary)
                         .disabled(!isValid || isSaving)
                     }
-                    .padding()
+                    .padding(24)
                 }
             }
-            .navigationTitle("Edit Profile")
+            .navigationTitle("EDIT PROFILE")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button {
                         dismiss()
+                    } label: {
+                        Text("CANCEL")
+                            .font(StudioTypography.labelSmall)
+                            .tracking(StudioTypography.trackingNormal)
+                            .foregroundStyle(Color.studioMuted)
                     }
-                    .foregroundStyle(Color.studioSmoke)
                 }
             }
-            .alert("Error", isPresented: $showError) {
+            .alert("ERROR", isPresented: $showError) {
                 Button("OK") { showError = false }
             } message: {
                 Text(error?.localizedDescription ?? "An error occurred")
@@ -103,7 +108,6 @@ struct EditProfileView: View {
                 }
             }
         }
-        .tint(Color.studioGold)
     }
 
     // MARK: - Avatar Section
@@ -116,116 +120,110 @@ struct EditProfileView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: 150, height: 150)
-                        .clipShape(Circle())
+                        .clipShape(Rectangle())
                         .overlay {
-                            Circle()
-                                .stroke(Color.studioGold, lineWidth: 3)
+                            Rectangle()
+                                .stroke(Color.studioChrome, lineWidth: 2)
                         }
                 } else {
                     AvatarView(url: avatarUrl, size: .xxlarge, showBorder: true)
                 }
 
-                // Camera overlay
+                // Camera overlay - pixel style square
                 PhotosPicker(selection: $selectedPhoto, matching: .images, photoLibrary: .shared()) {
-                    Circle()
-                        .fill(Color.studioDeepBlack.opacity(0.7))
+                    Rectangle()
+                        .fill(Color.studioBlack.opacity(0.8))
                         .frame(width: 44, height: 44)
                         .overlay {
                             Image(systemName: "camera.fill")
-                                .foregroundStyle(Color.studioGold)
+                                .font(.system(size: 16, weight: .light))
+                                .foregroundStyle(Color.studioChrome)
+                        }
+                        .overlay {
+                            Rectangle()
+                                .stroke(Color.studioLine, lineWidth: 0.5)
                         }
                 }
                 .offset(x: 55, y: 55)
             }
 
-            Text("Tap to change photo")
-                .font(.caption)
-                .foregroundStyle(Color.studioSmoke)
+            Text("TAP TO CHANGE PHOTO")
+                .font(StudioTypography.labelSmall)
+                .tracking(StudioTypography.trackingNormal)
+                .foregroundStyle(Color.studioMuted)
         }
     }
 
     // MARK: - Form Section
 
     private var formSection: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             // Display Name
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Display Name")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.studioSmoke)
-
-                TextField("Your name", text: $displayName)
-                    .padding()
-                    .background(Color.studioDeepBlack)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .foregroundStyle(Color.studioPlatinum)
-            }
+            StudioTextField(
+                title: "DISPLAY NAME",
+                text: $displayName,
+                placeholder: "your name"
+            )
 
             // Username
             VStack(alignment: .leading, spacing: 8) {
-                Text("Username")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.studioSmoke)
+                Text("USERNAME")
+                    .font(StudioTypography.labelSmall)
+                    .tracking(StudioTypography.trackingWide)
+                    .foregroundStyle(Color.studioSecondary)
 
-                HStack {
+                HStack(spacing: 0) {
                     Text("@")
-                        .foregroundStyle(Color.studioSmoke)
+                        .font(StudioTypography.bodyMedium)
+                        .foregroundStyle(Color.studioMuted)
+                        .padding(.leading, 16)
 
-                    TextField("username", text: $username)
+                    TextField("", text: $username, prompt: Text("username")
+                        .font(StudioTypography.bodyMedium)
+                        .foregroundStyle(Color.studioMuted.opacity(0.5)))
+                        .font(StudioTypography.bodyMedium)
                         .autocapitalization(.none)
                         .textInputAutocapitalization(.never)
-                        .foregroundStyle(Color.studioPlatinum)
-
-                    Spacer()
+                        .foregroundStyle(Color.studioPrimary)
+                        .padding(.vertical, 16)
+                        .padding(.trailing, 16)
 
                     if isCheckingUsername {
-                        ProgressView()
-                            .scaleEffect(0.8)
+                        PixelLoadingIndicator()
+                            .padding(.trailing, 16)
                     } else if let available = usernameAvailable {
-                        Image(systemName: available ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundStyle(available ? Color.studioSuccess : Color.studioError)
+                        Image(systemName: available ? "checkmark" : "xmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(available ? Color.studioChrome : Color.studioError)
+                            .padding(.trailing, 16)
                     }
                 }
-                .padding()
-                .background(Color.studioDeepBlack)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .background(Color.studioSurface)
+                .overlay {
+                    Rectangle()
+                        .stroke(
+                            usernameAvailable == false && username != user.username
+                                ? Color.studioError
+                                : Color.studioLine,
+                            lineWidth: 0.5
+                        )
+                }
 
                 if usernameAvailable == false && username != user.username {
-                    Text("Username already taken")
-                        .font(.caption)
+                    Text("USERNAME ALREADY TAKEN")
+                        .font(StudioTypography.labelSmall)
+                        .tracking(StudioTypography.trackingNormal)
                         .foregroundStyle(Color.studioError)
                 }
             }
 
             // Bio
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Bio")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(Color.studioSmoke)
-
-                    Spacer()
-
-                    Text("\(bio.count)/150")
-                        .font(.caption)
-                        .foregroundStyle(bio.count > 150 ? Color.studioError : Color.studioSmoke)
-                }
-
-                TextField("Tell us about yourself", text: $bio, axis: .vertical)
-                    .lineLimit(3...5)
-                    .padding()
-                    .background(Color.studioDeepBlack)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .foregroundStyle(Color.studioPlatinum)
-                    .onChange(of: bio) { _, newValue in
-                        if newValue.count > 150 {
-                            bio = String(newValue.prefix(150))
-                        }
-                    }
-            }
+            StudioTextEditor(
+                title: "BIO",
+                text: $bio,
+                placeholder: "tell us about yourself",
+                maxLength: 150
+            )
         }
     }
 

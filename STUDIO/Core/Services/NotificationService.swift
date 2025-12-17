@@ -39,7 +39,7 @@ final class NotificationService {
 
             return granted
         } catch {
-            print("Notification authorization error: \(error)")
+            log.error(error, category: .auth, context: ["operation": "notification_authorization"])
             return false
         }
     }
@@ -85,7 +85,7 @@ final class NotificationService {
                 ])
                 .execute()
         } catch {
-            print("Failed to save device token: \(error)")
+            log.error(error, category: .network, context: ["operation": "save_device_token"])
         }
     }
 
@@ -119,7 +119,7 @@ final class NotificationService {
         do {
             try await center.add(request)
         } catch {
-            print("Failed to schedule notification: \(error)")
+            log.error(error, category: .lifecycle, context: ["operation": "schedule_notification", "id": id])
         }
     }
 
@@ -157,7 +157,7 @@ final class NotificationService {
         do {
             try await center.setBadgeCount(0)
         } catch {
-            print("Failed to clear badge: \(error)")
+            log.error(error, category: .ui, context: ["operation": "clear_badge"])
         }
     }
 
@@ -166,7 +166,7 @@ final class NotificationService {
         do {
             try await center.setBadgeCount(count)
         } catch {
-            print("Failed to set badge: \(error)")
+            log.error(error, category: .ui, context: ["operation": "set_badge", "count": count])
         }
     }
 

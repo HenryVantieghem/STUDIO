@@ -2,7 +2,7 @@
 //  PermissionsOnboardingView.swift
 //  STUDIO
 //
-//  Created by Claude on 12/16/25.
+//  Pixel Afterdark Design System - 8-bit retro, sharp edges
 //
 
 import SwiftUI
@@ -12,6 +12,7 @@ import Photos
 // MARK: - Permissions Onboarding View
 
 /// Post-signup permissions request for camera and photo library
+/// 4-step flow: Welcome → Camera → Photos → Complete
 struct PermissionsOnboardingView: View {
     @Environment(\.dismiss) private var dismiss
 
@@ -24,29 +25,33 @@ struct PermissionsOnboardingView: View {
 
     var body: some View {
         ZStack {
-            // Background gradient
-            LinearGradient(
-                colors: [Color.studioBlack, Color.studioBlack.opacity(0.95)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            // Pure black background - Pixel Afterdark
+            Color.studioBlack
+                .ignoresSafeArea()
+
+            // Grid pattern overlay
+            GeometryReader { geo in
+                Path { path in
+                    let spacing: CGFloat = 40
+                    for x in stride(from: 0, to: geo.size.width, by: spacing) {
+                        path.move(to: CGPoint(x: x, y: 0))
+                        path.addLine(to: CGPoint(x: x, y: geo.size.height))
+                    }
+                    for y in stride(from: 0, to: geo.size.height, by: spacing) {
+                        path.move(to: CGPoint(x: 0, y: y))
+                        path.addLine(to: CGPoint(x: geo.size.width, y: y))
+                    }
+                }
+                .stroke(Color.studioLine.opacity(0.2), lineWidth: 0.5)
+            }
             .ignoresSafeArea()
 
-            // Disco ball ambient effect
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color.studioGold.opacity(0.15), Color.clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 300
-                    )
-                )
-                .frame(width: 600, height: 600)
-                .offset(y: -200)
-                .blur(radius: 60)
-
             VStack(spacing: 0) {
+                // Progress indicator
+                progressIndicator
+                    .padding(.top, 60)
+                    .padding(.horizontal, 24)
+
                 Spacer()
 
                 // Content based on step
@@ -73,8 +78,20 @@ struct PermissionsOnboardingView: View {
             cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
             photosStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
 
-            withAnimation(.easeInOut(duration: 0.8)) {
+            withAnimation(.easeInOut(duration: 0.6)) {
                 isAnimating = true
+            }
+        }
+    }
+
+    // MARK: - Progress Indicator
+
+    private var progressIndicator: some View {
+        HStack(spacing: 8) {
+            ForEach(0..<4, id: \.self) { index in
+                Rectangle()
+                    .fill(index <= currentStep.rawValue ? Color.studioChrome : Color.studioLine)
+                    .frame(height: 2)
             }
         }
     }
@@ -82,34 +99,36 @@ struct PermissionsOnboardingView: View {
     // MARK: - Welcome Content
 
     private var welcomeContent: some View {
-        VStack(spacing: 32) {
-            // Icon
+        VStack(spacing: 40) {
+            // Pixel icon
             ZStack {
-                Circle()
-                    .fill(Color.studioGold.opacity(0.1))
-                    .frame(width: 140, height: 140)
-
-                Circle()
-                    .fill(Color.studioGold.opacity(0.2))
-                    .frame(width: 100, height: 100)
+                Rectangle()
+                    .fill(Color.studioSurface)
+                    .frame(width: 120, height: 120)
+                    .overlay {
+                        Rectangle()
+                            .stroke(Color.studioChrome, lineWidth: 2)
+                    }
 
                 Image(systemName: "sparkles")
-                    .font(.system(size: 48, weight: .medium))
-                    .foregroundStyle(Color.studioGold)
+                    .font(.system(size: 48, weight: .ultraLight))
+                    .foregroundStyle(Color.studioChrome)
             }
             .scaleEffect(isAnimating ? 1 : 0.8)
             .opacity(isAnimating ? 1 : 0)
 
-            VStack(spacing: 16) {
-                Text("Welcome to STUDIO")
-                    .font(.custom("Bodoni 72 Oldstyle", size: 32))
-                    .foregroundStyle(Color.studioPlatinum)
+            VStack(spacing: 20) {
+                Text("WELCOME TO STUDIO")
+                    .font(StudioTypography.headlineLarge)
+                    .tracking(StudioTypography.trackingWide)
+                    .foregroundStyle(Color.studioPrimary)
 
-                Text("Before we get started, we need a few permissions to make your party experience unforgettable.")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.studioSilver)
+                Text("BEFORE WE GET STARTED, WE NEED A FEW PERMISSIONS TO MAKE YOUR PARTY EXPERIENCE UNFORGETTABLE.")
+                    .font(StudioTypography.bodySmall)
+                    .tracking(StudioTypography.trackingNormal)
+                    .foregroundStyle(Color.studioMuted)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, 24)
             }
             .opacity(isAnimating ? 1 : 0)
             .offset(y: isAnimating ? 0 : 20)
@@ -118,14 +137,14 @@ struct PermissionsOnboardingView: View {
             VStack(spacing: 12) {
                 permissionPreviewCard(
                     icon: "camera.fill",
-                    title: "Camera",
-                    description: "Capture party moments"
+                    title: "CAMERA",
+                    description: "CAPTURE PARTY MOMENTS"
                 )
 
                 permissionPreviewCard(
                     icon: "photo.fill",
-                    title: "Photo Library",
-                    description: "Save and share memories"
+                    title: "PHOTO LIBRARY",
+                    description: "SAVE AND SHARE MEMORIES"
                 )
             }
             .padding(.horizontal, 24)
@@ -136,39 +155,43 @@ struct PermissionsOnboardingView: View {
 
     private func permissionPreviewCard(icon: String, title: String, description: String) -> some View {
         HStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(Color.studioGold.opacity(0.1))
-                    .frame(width: 48, height: 48)
+            Rectangle()
+                .fill(Color.studioSurface)
+                .frame(width: 48, height: 48)
+                .overlay {
+                    Image(systemName: icon)
+                        .font(.system(size: 20, weight: .light))
+                        .foregroundStyle(Color.studioChrome)
+                }
+                .overlay {
+                    Rectangle()
+                        .stroke(Color.studioLine, lineWidth: 0.5)
+                }
 
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundStyle(Color.studioGold)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.headline)
-                    .foregroundStyle(Color.studioPlatinum)
+                    .font(StudioTypography.labelLarge)
+                    .tracking(StudioTypography.trackingNormal)
+                    .foregroundStyle(Color.studioPrimary)
 
                 Text(description)
-                    .font(.caption)
-                    .foregroundStyle(Color.studioSilver)
+                    .font(StudioTypography.labelSmall)
+                    .tracking(StudioTypography.trackingNormal)
+                    .foregroundStyle(Color.studioMuted)
             }
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(Color.studioSilver.opacity(0.5))
+                .font(.system(size: 10, weight: .light))
+                .foregroundStyle(Color.studioMuted)
         }
         .padding(16)
-        .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
+        .background(Color.studioSurface)
+        .overlay {
+            Rectangle()
+                .stroke(Color.studioLine, lineWidth: 0.5)
+        }
     }
 
     // MARK: - Camera Content
@@ -176,10 +199,10 @@ struct PermissionsOnboardingView: View {
     private var cameraContent: some View {
         permissionContent(
             icon: "camera.fill",
-            title: "Camera Access",
-            description: "Take photos and videos at parties to share with your crew. Your memories deserve to be captured.",
+            title: "CAMERA ACCESS",
+            description: "TAKE PHOTOS AND VIDEOS AT PARTIES TO SHARE WITH YOUR CREW. YOUR MEMORIES DESERVE TO BE CAPTURED.",
             status: cameraStatusText,
-            statusColor: cameraStatusColor
+            isGranted: cameraStatus == .authorized
         )
     }
 
@@ -188,10 +211,10 @@ struct PermissionsOnboardingView: View {
     private var photosContent: some View {
         permissionContent(
             icon: "photo.fill",
-            title: "Photo Library",
-            description: "Save party photos to your library and upload existing photos to share with friends.",
+            title: "PHOTO LIBRARY",
+            description: "SAVE PARTY PHOTOS TO YOUR LIBRARY AND UPLOAD EXISTING PHOTOS TO SHARE WITH FRIENDS.",
             status: photosStatusText,
-            statusColor: photosStatusColor
+            isGranted: photosStatus == .authorized || photosStatus == .limited
         )
     }
 
@@ -200,107 +223,124 @@ struct PermissionsOnboardingView: View {
         title: String,
         description: String,
         status: String,
-        statusColor: Color
+        isGranted: Bool
     ) -> some View {
-        VStack(spacing: 32) {
-            // Animated icon
+        VStack(spacing: 40) {
+            // Animated pixel icon
             ZStack {
-                // Pulsing rings
+                // Pixel pulse rings
                 ForEach(0..<3, id: \.self) { index in
-                    Circle()
-                        .stroke(Color.studioGold.opacity(0.1), lineWidth: 2)
-                        .frame(width: CGFloat(100 + index * 40), height: CGFloat(100 + index * 40))
-                        .scaleEffect(isAnimating ? 1.1 : 1)
+                    Rectangle()
+                        .stroke(Color.studioLine.opacity(0.3), lineWidth: 1)
+                        .frame(
+                            width: CGFloat(80 + index * 30),
+                            height: CGFloat(80 + index * 30)
+                        )
+                        .scaleEffect(isAnimating ? 1.05 : 1)
                         .opacity(isAnimating ? 0.3 : 0.6)
                         .animation(
-                            .easeInOut(duration: 1.5)
+                            .easeInOut(duration: 1.2)
                             .repeatForever(autoreverses: true)
-                            .delay(Double(index) * 0.2),
+                            .delay(Double(index) * 0.15),
                             value: isAnimating
                         )
                 }
 
-                Circle()
-                    .fill(Color.studioGold.opacity(0.2))
+                Rectangle()
+                    .fill(Color.studioSurface)
                     .frame(width: 100, height: 100)
-
-                Image(systemName: icon)
-                    .font(.system(size: 44, weight: .medium))
-                    .foregroundStyle(Color.studioGold)
+                    .overlay {
+                        Image(systemName: icon)
+                            .font(.system(size: 40, weight: .ultraLight))
+                            .foregroundStyle(Color.studioChrome)
+                    }
+                    .overlay {
+                        Rectangle()
+                            .stroke(Color.studioChrome, lineWidth: 2)
+                    }
             }
 
-            VStack(spacing: 16) {
+            VStack(spacing: 20) {
                 Text(title)
-                    .font(.custom("Bodoni 72 Oldstyle", size: 28))
-                    .foregroundStyle(Color.studioPlatinum)
+                    .font(StudioTypography.headlineLarge)
+                    .tracking(StudioTypography.trackingWide)
+                    .foregroundStyle(Color.studioPrimary)
 
                 Text(description)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.studioSilver)
+                    .font(StudioTypography.bodySmall)
+                    .tracking(StudioTypography.trackingNormal)
+                    .foregroundStyle(Color.studioMuted)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, 24)
             }
 
-            // Status badge
+            // Status badge - pixel style
             HStack(spacing: 8) {
-                Circle()
-                    .fill(statusColor)
-                    .frame(width: 8, height: 8)
+                Rectangle()
+                    .fill(isGranted ? Color.studioChrome : Color.studioMuted)
+                    .frame(width: 6, height: 6)
 
                 Text(status)
-                    .font(.caption)
-                    .foregroundStyle(statusColor)
+                    .font(StudioTypography.labelSmall)
+                    .tracking(StudioTypography.trackingNormal)
+                    .foregroundStyle(isGranted ? Color.studioChrome : Color.studioMuted)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(statusColor.opacity(0.1))
-            .clipShape(Capsule())
+            .padding(.vertical, 10)
+            .background(Color.studioSurface)
+            .overlay {
+                Rectangle()
+                    .stroke(isGranted ? Color.studioChrome : Color.studioLine, lineWidth: 0.5)
+            }
         }
     }
 
     // MARK: - Complete Content
 
     private var completeContent: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 40) {
             ZStack {
-                Circle()
-                    .fill(Color.green.opacity(0.1))
-                    .frame(width: 140, height: 140)
-
-                Circle()
-                    .fill(Color.green.opacity(0.2))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: "checkmark")
-                    .font(.system(size: 48, weight: .bold))
-                    .foregroundStyle(Color.green)
+                Rectangle()
+                    .fill(Color.studioSurface)
+                    .frame(width: 120, height: 120)
+                    .overlay {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 48, weight: .bold))
+                            .foregroundStyle(Color.studioChrome)
+                    }
+                    .overlay {
+                        Rectangle()
+                            .stroke(Color.studioChrome, lineWidth: 2)
+                    }
             }
             .scaleEffect(isAnimating ? 1 : 0.5)
 
-            VStack(spacing: 16) {
-                Text("You're All Set!")
-                    .font(.custom("Bodoni 72 Oldstyle", size: 32))
-                    .foregroundStyle(Color.studioPlatinum)
+            VStack(spacing: 20) {
+                Text("YOU'RE ALL SET")
+                    .font(StudioTypography.headlineLarge)
+                    .tracking(StudioTypography.trackingWide)
+                    .foregroundStyle(Color.studioPrimary)
 
-                Text("Time to start the party. Create your first event or join one from a friend.")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.studioSilver)
+                Text("TIME TO START THE PARTY. CREATE YOUR FIRST EVENT OR JOIN ONE FROM A FRIEND.")
+                    .font(StudioTypography.bodySmall)
+                    .tracking(StudioTypography.trackingNormal)
+                    .foregroundStyle(Color.studioMuted)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, 24)
             }
 
             // Summary cards
             VStack(spacing: 12) {
                 permissionSummaryCard(
                     icon: "camera.fill",
-                    title: "Camera",
+                    title: "CAMERA",
                     granted: cameraStatus == .authorized
                 )
 
                 permissionSummaryCard(
                     icon: "photo.fill",
-                    title: "Photos",
-                    granted: photosStatus == .authorized
+                    title: "PHOTOS",
+                    granted: photosStatus == .authorized || photosStatus == .limited
                 )
             }
             .padding(.horizontal, 24)
@@ -310,23 +350,32 @@ struct PermissionsOnboardingView: View {
     private func permissionSummaryCard(icon: String, title: String, granted: Bool) -> some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundStyle(granted ? Color.studioGold : Color.studioSilver)
-                .frame(width: 32)
+                .font(.system(size: 16, weight: .light))
+                .foregroundStyle(granted ? Color.studioChrome : Color.studioMuted)
+                .frame(width: 24)
 
             Text(title)
-                .font(.subheadline)
-                .foregroundStyle(Color.studioPlatinum)
+                .font(StudioTypography.labelLarge)
+                .tracking(StudioTypography.trackingNormal)
+                .foregroundStyle(Color.studioPrimary)
 
             Spacer()
 
-            Image(systemName: granted ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(granted ? Color.green : Color.red.opacity(0.7))
+            Rectangle()
+                .fill(granted ? Color.studioChrome : Color.studioError)
+                .frame(width: 20, height: 20)
+                .overlay {
+                    Image(systemName: granted ? "checkmark" : "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color.studioBlack)
+                }
         }
         .padding(16)
-        .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(Color.studioSurface)
+        .overlay {
+            Rectangle()
+                .stroke(Color.studioLine, lineWidth: 0.5)
+        }
     }
 
     // MARK: - Action Button
@@ -335,18 +384,22 @@ struct PermissionsOnboardingView: View {
         Button {
             handleAction()
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: 12) {
                 Text(buttonTitle)
-                    .font(.headline)
+                    .font(StudioTypography.labelLarge)
+                    .tracking(StudioTypography.trackingWide)
 
                 Image(systemName: buttonIcon)
-                    .font(.subheadline)
+                    .font(.system(size: 12, weight: .light))
             }
             .foregroundStyle(Color.studioBlack)
             .frame(maxWidth: .infinity)
             .frame(height: 56)
-            .background(Color.studioGold)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .background(Color.studioChrome)
+            .overlay {
+                Rectangle()
+                    .stroke(Color.studioPrimary, lineWidth: 1)
+            }
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
@@ -355,13 +408,13 @@ struct PermissionsOnboardingView: View {
     private var buttonTitle: String {
         switch currentStep {
         case .welcome:
-            return "Get Started"
+            return "GET STARTED"
         case .camera:
-            return cameraStatus == .notDetermined ? "Enable Camera" : "Continue"
+            return cameraStatus == .notDetermined ? "ENABLE CAMERA" : "CONTINUE"
         case .photos:
-            return photosStatus == .notDetermined ? "Enable Photos" : "Continue"
+            return photosStatus == .notDetermined ? "ENABLE PHOTOS" : "CONTINUE"
         case .complete:
-            return "Let's Party"
+            return "LET'S PARTY"
         }
     }
 
@@ -370,7 +423,7 @@ struct PermissionsOnboardingView: View {
         case .welcome:
             return "arrow.right"
         case .camera, .photos:
-            return currentStep == .camera && cameraStatus == .notDetermined ? "camera" : "arrow.right"
+            return "arrow.right"
         case .complete:
             return "sparkles"
         }
@@ -380,37 +433,19 @@ struct PermissionsOnboardingView: View {
 
     private var cameraStatusText: String {
         switch cameraStatus {
-        case .authorized: return "Access Granted"
-        case .denied, .restricted: return "Access Denied"
-        case .notDetermined: return "Not Yet Requested"
-        @unknown default: return "Unknown"
-        }
-    }
-
-    private var cameraStatusColor: Color {
-        switch cameraStatus {
-        case .authorized: return .green
-        case .denied, .restricted: return .red
-        case .notDetermined: return .studioGold
-        @unknown default: return .studioSilver
+        case .authorized: return "ACCESS GRANTED"
+        case .denied, .restricted: return "ACCESS DENIED"
+        case .notDetermined: return "NOT YET REQUESTED"
+        @unknown default: return "UNKNOWN"
         }
     }
 
     private var photosStatusText: String {
         switch photosStatus {
-        case .authorized, .limited: return "Access Granted"
-        case .denied, .restricted: return "Access Denied"
-        case .notDetermined: return "Not Yet Requested"
-        @unknown default: return "Unknown"
-        }
-    }
-
-    private var photosStatusColor: Color {
-        switch photosStatus {
-        case .authorized, .limited: return .green
-        case .denied, .restricted: return .red
-        case .notDetermined: return .studioGold
-        @unknown default: return .studioSilver
+        case .authorized, .limited: return "ACCESS GRANTED"
+        case .denied, .restricted: return "ACCESS DENIED"
+        case .notDetermined: return "NOT YET REQUESTED"
+        @unknown default: return "UNKNOWN"
         }
     }
 
@@ -419,7 +454,7 @@ struct PermissionsOnboardingView: View {
     private func handleAction() {
         switch currentStep {
         case .welcome:
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+            withAnimation(.easeInOut(duration: 0.3)) {
                 currentStep = .camera
             }
 
@@ -427,7 +462,7 @@ struct PermissionsOnboardingView: View {
             if cameraStatus == .notDetermined {
                 requestCameraPermission()
             } else {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                withAnimation(.easeInOut(duration: 0.3)) {
                     currentStep = .photos
                 }
             }
@@ -436,7 +471,7 @@ struct PermissionsOnboardingView: View {
             if photosStatus == .notDetermined {
                 requestPhotosPermission()
             } else {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                withAnimation(.easeInOut(duration: 0.3)) {
                     currentStep = .complete
                 }
             }
@@ -448,9 +483,9 @@ struct PermissionsOnboardingView: View {
 
     private func requestCameraPermission() {
         AVCaptureDevice.requestAccess(for: .video) { granted in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 cameraStatus = granted ? .authorized : .denied
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                withAnimation(.easeInOut(duration: 0.3)) {
                     currentStep = .photos
                 }
             }
@@ -459,9 +494,9 @@ struct PermissionsOnboardingView: View {
 
     private func requestPhotosPermission() {
         PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 photosStatus = status
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                withAnimation(.easeInOut(duration: 0.3)) {
                     currentStep = .complete
                 }
             }
@@ -471,11 +506,11 @@ struct PermissionsOnboardingView: View {
 
 // MARK: - Permission Step
 
-private enum PermissionStep {
-    case welcome
-    case camera
-    case photos
-    case complete
+private enum PermissionStep: Int {
+    case welcome = 0
+    case camera = 1
+    case photos = 2
+    case complete = 3
 }
 
 // MARK: - Preview

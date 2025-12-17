@@ -9,11 +9,10 @@ import SwiftUI
 
 // MARK: - Studio Async Image
 
-/// Enhanced async image with loading and error states
+/// Enhanced async image with loading and error states - Pixel Afterdark style (sharp edges)
 struct StudioAsyncImage: View {
     let url: String?
     var contentMode: ContentMode = .fill
-    var cornerRadius: CGFloat = 0
     var showLoadingIndicator: Bool = true
 
     var body: some View {
@@ -25,8 +24,7 @@ struct StudioAsyncImage: View {
                         placeholderView
                             .overlay {
                                 if showLoadingIndicator {
-                                    ProgressView()
-                                        .tint(.studioGold)
+                                    PixelLoadingIndicator()
                                 }
                             }
                     case .success(let image):
@@ -43,7 +41,7 @@ struct StudioAsyncImage: View {
                 placeholderView
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .clipShape(Rectangle())
     }
 
     private var placeholderView: some View {
@@ -57,12 +55,13 @@ struct StudioAsyncImage: View {
 
             VStack(spacing: 8) {
                 Image(systemName: "photo")
-                    .font(.title2)
-                    .foregroundStyle(Color.studioSmoke)
+                    .font(.system(size: 24, weight: .ultraLight))
+                    .foregroundStyle(Color.studioMuted)
 
-                Text("Failed to load")
-                    .font(.caption2)
-                    .foregroundStyle(Color.studioSmoke)
+                Text("FAILED TO LOAD")
+                    .font(StudioTypography.labelSmall)
+                    .tracking(StudioTypography.trackingNormal)
+                    .foregroundStyle(Color.studioMuted)
             }
         }
     }
@@ -70,41 +69,41 @@ struct StudioAsyncImage: View {
 
 // MARK: - Media Thumbnail
 
-/// Thumbnail view for media items (photos/videos)
+/// Thumbnail view for media items (photos/videos) - Pixel Afterdark style
 struct MediaThumbnail: View {
     let url: String?
     var isVideo: Bool = false
     var duration: TimeInterval?
     var size: CGFloat = 100
-    var cornerRadius: CGFloat = 8
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             StudioAsyncImage(
                 url: url,
-                contentMode: .fill,
-                cornerRadius: cornerRadius
+                contentMode: .fill
             )
             .frame(width: size, height: size)
 
-            // Video indicator
+            // Video indicator - pixel style
             if isVideo {
                 HStack(spacing: 4) {
                     Image(systemName: "play.fill")
-                        .font(.caption2)
+                        .font(.system(size: 10, weight: .light))
 
                     if let duration {
                         Text(formatDuration(duration))
-                            .font(.caption2)
-                            .fontWeight(.medium)
+                            .font(StudioTypography.labelSmall)
                     }
                 }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(.black.opacity(0.6))
-                .clipShape(Capsule())
-                .padding(6)
+                .foregroundStyle(Color.studioPrimary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.studioBlack.opacity(0.8))
+                .overlay {
+                    Rectangle()
+                        .stroke(Color.studioLine, lineWidth: 0.5)
+                }
+                .padding(4)
             }
         }
     }
@@ -144,7 +143,7 @@ struct CoverImageView: View {
 
 // MARK: - Media Grid Item
 
-/// Grid item for photo galleries
+/// Grid item for photo galleries - Pixel Afterdark style
 struct MediaGridItem: View {
     let url: String?
     var isVideo: Bool = false
@@ -162,46 +161,51 @@ struct MediaGridItem: View {
                     StudioAsyncImage(url: url, contentMode: .fill)
                         .frame(width: geo.size.width, height: geo.size.width)
 
-                    // Video badge
+                    // Video badge - pixel style
                     if isVideo {
                         HStack(spacing: 4) {
                             Image(systemName: "play.fill")
-                                .font(.caption2)
+                                .font(.system(size: 10, weight: .light))
 
                             if let duration {
                                 Text(formatDuration(duration))
-                                    .font(.caption2)
+                                    .font(StudioTypography.labelSmall)
                             }
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.studioPrimary)
                         .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(.black.opacity(0.6))
-                        .clipShape(Capsule())
-                        .padding(6)
+                        .padding(.vertical, 4)
+                        .background(Color.studioBlack.opacity(0.8))
+                        .overlay {
+                            Rectangle()
+                                .stroke(Color.studioLine, lineWidth: 0.5)
+                        }
+                        .padding(4)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     }
 
-                    // Selection indicator
+                    // Selection indicator - pixel square style
                     if isSelected {
                         ZStack {
-                            Circle()
-                                .fill(Color.studioGold)
+                            Rectangle()
+                                .fill(Color.studioChrome)
                                 .frame(width: 24, height: 24)
 
                             if let index = selectionIndex {
                                 Text("\(index)")
-                                    .font(.caption)
-                                    .fontWeight(.bold)
+                                    .font(StudioTypography.labelSmall)
                                     .foregroundStyle(Color.studioBlack)
                             } else {
                                 Image(systemName: "checkmark")
-                                    .font(.caption)
-                                    .fontWeight(.bold)
+                                    .font(.system(size: 12, weight: .bold))
                                     .foregroundStyle(Color.studioBlack)
                             }
                         }
-                        .padding(6)
+                        .overlay {
+                            Rectangle()
+                                .stroke(Color.studioLine, lineWidth: 0.5)
+                        }
+                        .padding(4)
                     }
                 }
                 .frame(width: geo.size.width, height: geo.size.width)
@@ -223,12 +227,12 @@ struct MediaGridItem: View {
 #Preview("Async Images") {
     ScrollView {
         VStack(spacing: 24) {
-            // Basic async image
-            StudioAsyncImage(url: nil, cornerRadius: 12)
+            // Basic async image - pixel style (sharp edges)
+            StudioAsyncImage(url: nil)
                 .frame(height: 200)
 
             // Media thumbnails
-            HStack(spacing: 8) {
+            HStack(spacing: 2) {
                 MediaThumbnail(url: nil)
                 MediaThumbnail(url: nil, isVideo: true, duration: 125)
                 MediaThumbnail(url: nil)
