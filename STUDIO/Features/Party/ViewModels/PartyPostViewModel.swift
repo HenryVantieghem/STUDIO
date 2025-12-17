@@ -44,7 +44,7 @@ final class PartyPostViewModel {
     }
 
     var activePolls: [PartyPoll] {
-        polls.filter { $0.isActive }
+        polls.filter { $0.isActive == true }
     }
 
     private(set) var currentUserId: UUID?

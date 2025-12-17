@@ -212,7 +212,7 @@ struct PartyPollsSheet: View {
     private var filteredPolls: [PartyPoll] {
         switch selectedTab {
         case .active:
-            return polls.filter { $0.isActive }
+            return polls.filter { $0.isActive == true }
         case .results:
             return polls
         }
@@ -264,7 +264,7 @@ struct PollCard: View {
                 Spacer()
 
                 // Status indicator
-                if poll.isActive {
+                if poll.isActive == true {
                     HStack(spacing: 4) {
                         Rectangle()
                             .fill(Color.studioChrome)
@@ -291,7 +291,7 @@ struct PollCard: View {
                             showResults: showResults,
                             isSelected: option.id == selectedOption || option.hasVoted == true,
                             onTap: {
-                                if poll.isActive && !showResults {
+                                if poll.isActive == true && !showResults {
                                     selectedOption = option.id
                                     onVote?(option.id)
                                 }
@@ -688,6 +688,8 @@ extension PollType {
         case .bestDressed: return "BEST DRESSED"
         case .bestMoment: return "BEST MOMENT"
         case .custom: return "CUSTOM"
+        case .singleChoice: return "SINGLE CHOICE"
+        case .multipleChoice: return "MULTIPLE CHOICE"
         }
     }
 
@@ -696,14 +698,14 @@ extension PollType {
         case .partyMVP: return "star.fill"
         case .bestDressed: return "sparkles"
         case .bestMoment: return "camera.fill"
-        case .custom: return "chart.bar"
+        case .custom, .singleChoice, .multipleChoice: return "chart.bar"
         }
     }
 
     var isPeoplePoll: Bool {
         switch self {
         case .partyMVP, .bestDressed: return true
-        case .bestMoment, .custom: return false
+        case .bestMoment, .custom, .singleChoice, .multipleChoice: return false
         }
     }
 
@@ -712,7 +714,7 @@ extension PollType {
         case .partyMVP: return "Who's the party MVP?"
         case .bestDressed: return "Who's best dressed?"
         case .bestMoment: return "Best moment of the night?"
-        case .custom: return ""
+        case .custom, .singleChoice, .multipleChoice: return ""
         }
     }
 }

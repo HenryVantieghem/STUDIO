@@ -148,7 +148,7 @@ struct CreatePollView: View {
             question = "Who's best dressed at the party?"
         case .bestMoment:
             question = "What was the best moment of the night?"
-        case .custom:
+        case .custom, .singleChoice, .multipleChoice:
             question = ""
         }
 

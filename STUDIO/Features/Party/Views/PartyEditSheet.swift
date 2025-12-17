@@ -621,9 +621,9 @@ struct PartyEditSheet: View {
             var updatedParty = party
             updatedParty.title = title
             updatedParty.description = description.isEmpty ? nil : description
-            updatedParty.location = location.isEmpty ? nil : location
-            updatedParty.partyDate = partyDate
-            updatedParty.isPublic = isPublic
+            updatedParty.locationName = location.isEmpty ? nil : location
+            updatedParty.startsAt = partyDate
+            updatedParty.privacy = isPublic ? .publicParty : .inviteOnly
 
             // Upload new cover if changed
             if let newImage = newCoverImage {

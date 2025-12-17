@@ -16,12 +16,15 @@ struct Party: Codable, Identifiable, Hashable, Sendable {
     var title: String
     var description: String?
     var coverImageUrl: String?
-    var location: String?
-    var partyDate: Date?
-    var endDate: Date?
-    var isActive: Bool
-    var isPublic: Bool?  // Optional - may not exist in DB yet
+    var locationName: String?
+    var locationLat: Double?
+    var locationLng: Double?
+    var startsAt: Date?
+    var endsAt: Date?
+    var status: PartyState?
+    var privacy: PartyPrivacy?
     var maxGuests: Int?
+    var guestCount: Int?
 
     // Relationships (populated via joins)
     var hosts: [PartyHost]?
@@ -35,17 +38,82 @@ struct Party: Codable, Identifiable, Hashable, Sendable {
         case title
         case description
         case coverImageUrl = "cover_image_url"
-        case location
-        case partyDate = "party_date"
-        case endDate = "end_date"
-        case isActive = "is_active"
-        case isPublic = "is_public"
+        case locationName = "location_name"
+        case locationLat = "location_lat"
+        case locationLng = "location_lng"
+        case startsAt = "starts_at"
+        case endsAt = "ends_at"
+        case status
+        case privacy
         case maxGuests = "max_guests"
+        case guestCount = "guest_count"
         case hosts
         case guests
         case mediaCount = "media_count"
         case commentCount = "comment_count"
     }
+
+    // Convenience computed properties for backward compatibility
+    var location: String? { locationName }
+    var partyDate: Date? { startsAt }
+    var endDate: Date? { endsAt }
+    var isActive: Bool { status == .active || status == nil }
+    var isPublic: Bool { privacy == .publicParty }
+
+    // Convenience initializer for backward compatibility with old parameter names
+    init(
+        id: UUID = UUID(),
+        createdAt: Date = Date(),
+        title: String,
+        description: String? = nil,
+        coverImageUrl: String? = nil,
+        location: String? = nil,
+        partyDate: Date? = nil,
+        endDate: Date? = nil,
+        isActive: Bool = true,
+        isPublic: Bool? = nil,
+        maxGuests: Int? = nil,
+        hosts: [PartyHost]? = nil,
+        guests: [PartyGuest]? = nil,
+        mediaCount: Int? = nil,
+        commentCount: Int? = nil
+    ) {
+        self.id = id
+        self.createdAt = createdAt
+        self.title = title
+        self.description = description
+        self.coverImageUrl = coverImageUrl
+        self.locationName = location
+        self.locationLat = nil
+        self.locationLng = nil
+        self.startsAt = partyDate
+        self.endsAt = endDate
+        self.status = isActive ? .active : .ended
+        self.privacy = isPublic == true ? .publicParty : .inviteOnly
+        self.maxGuests = maxGuests
+        self.guestCount = nil
+        self.hosts = hosts
+        self.guests = guests
+        self.mediaCount = mediaCount
+        self.commentCount = commentCount
+    }
+}
+
+// MARK: - Party State Enum (renamed to avoid conflict with PartyStatus struct)
+
+enum PartyState: String, Codable, Sendable {
+    case active = "active"
+    case ended = "ended"
+    case cancelled = "cancelled"
+    case draft = "draft"
+}
+
+// MARK: - Party Privacy Enum
+
+enum PartyPrivacy: String, Codable, Sendable {
+    case inviteOnly = "invite_only"
+    case publicParty = "public"
+    case friendsOnly = "friends_only"
 }
 
 // MARK: - Party Host
@@ -73,7 +141,8 @@ struct PartyHost: Codable, Identifiable, Hashable, Sendable {
 
 enum HostRole: String, Codable, Sendable {
     case creator = "creator"
-    case cohost = "cohost"
+    case host = "host"      // DB uses "host" not "cohost"
+    case cohost = "cohost"  // Keep for backward compatibility
 }
 
 // MARK: - Party Guest
@@ -84,8 +153,8 @@ struct PartyGuest: Codable, Identifiable, Hashable, Sendable {
     let partyId: UUID
     let userId: UUID
     var status: GuestStatus
-    let invitedBy: UUID
-    let invitedAt: Date
+    let invitedBy: UUID?
+    let createdAt: Date
     var respondedAt: Date?
 
     // Joined user profile
@@ -99,10 +168,36 @@ struct PartyGuest: Codable, Identifiable, Hashable, Sendable {
         case userId = "user_id"
         case status
         case invitedBy = "invited_by"
-        case invitedAt = "invited_at"
+        case createdAt = "created_at"
         case respondedAt = "responded_at"
         case user
         case party
+    }
+
+    // Backward compatibility computed property
+    var invitedAt: Date { createdAt }
+
+    // Convenience initializer for backward compatibility
+    init(
+        id: UUID = UUID(),
+        partyId: UUID,
+        userId: UUID,
+        status: GuestStatus = .pending,
+        invitedBy: UUID? = nil,
+        invitedAt: Date = Date(),
+        respondedAt: Date? = nil,
+        user: User? = nil,
+        party: Party? = nil
+    ) {
+        self.id = id
+        self.partyId = partyId
+        self.userId = userId
+        self.status = status
+        self.invitedBy = invitedBy
+        self.createdAt = invitedAt
+        self.respondedAt = respondedAt
+        self.user = user
+        self.party = party
     }
 }
 
@@ -121,8 +216,8 @@ struct PartyMedia: Codable, Identifiable, Hashable, Sendable {
     let partyId: UUID
     let userId: UUID
     let mediaType: MediaType
-    let url: String
-    var thumbnailUrl: String?
+    let storagePath: String
+    var thumbnailPath: String?
     var caption: String?
     let createdAt: Date
     var duration: Double? // For videos
@@ -135,12 +230,41 @@ struct PartyMedia: Codable, Identifiable, Hashable, Sendable {
         case partyId = "party_id"
         case userId = "user_id"
         case mediaType = "media_type"
-        case url
-        case thumbnailUrl = "thumbnail_url"
+        case storagePath = "storage_path"
+        case thumbnailPath = "thumbnail_path"
         case caption
         case createdAt = "created_at"
         case duration
         case user
+    }
+
+    // Backward compatibility computed properties
+    var url: String { storagePath }
+    var thumbnailUrl: String? { thumbnailPath }
+
+    // Convenience initializer for backward compatibility
+    init(
+        id: UUID = UUID(),
+        partyId: UUID,
+        userId: UUID,
+        mediaType: MediaType,
+        url: String,
+        thumbnailUrl: String? = nil,
+        caption: String? = nil,
+        createdAt: Date = Date(),
+        duration: Double? = nil,
+        user: User? = nil
+    ) {
+        self.id = id
+        self.partyId = partyId
+        self.userId = userId
+        self.mediaType = mediaType
+        self.storagePath = url
+        self.thumbnailPath = thumbnailUrl
+        self.caption = caption
+        self.createdAt = createdAt
+        self.duration = duration
+        self.user = user
     }
 }
 
@@ -184,12 +308,12 @@ struct PartyComment: Codable, Identifiable, Hashable, Sendable {
 struct PartyPoll: Codable, Identifiable, Hashable, Sendable {
     let id: UUID
     let partyId: UUID
-    let createdBy: UUID
+    let userId: UUID
     var question: String
     var pollType: PollType
     let createdAt: Date
-    var expiresAt: Date?
-    var isActive: Bool
+    var endsAt: Date?
+    var isActive: Bool?
 
     // Relationships
     var options: [PollOption]?
@@ -199,19 +323,52 @@ struct PartyPoll: Codable, Identifiable, Hashable, Sendable {
     enum CodingKeys: String, CodingKey {
         case id
         case partyId = "party_id"
-        case createdBy = "created_by"
+        case userId = "user_id"
         case question
         case pollType = "poll_type"
         case createdAt = "created_at"
-        case expiresAt = "expires_at"
+        case endsAt = "ends_at"
         case isActive = "is_active"
         case options
         case creator
         case totalVotes = "total_votes"
     }
+
+    // Backward compatibility computed properties
+    var createdBy: UUID { userId }
+    var expiresAt: Date? { endsAt }
+
+    // Convenience initializer for backward compatibility
+    init(
+        id: UUID = UUID(),
+        partyId: UUID,
+        createdBy: UUID,
+        question: String,
+        pollType: PollType = .singleChoice,
+        createdAt: Date = Date(),
+        expiresAt: Date? = nil,
+        isActive: Bool = true,
+        options: [PollOption]? = nil,
+        creator: User? = nil,
+        totalVotes: Int? = nil
+    ) {
+        self.id = id
+        self.partyId = partyId
+        self.userId = createdBy
+        self.question = question
+        self.pollType = pollType
+        self.createdAt = createdAt
+        self.endsAt = expiresAt
+        self.isActive = isActive
+        self.options = options
+        self.creator = creator
+        self.totalVotes = totalVotes
+    }
 }
 
 enum PollType: String, Codable, Sendable {
+    case singleChoice = "single_choice"
+    case multipleChoice = "multiple_choice"
     case partyMVP = "party_mvp"
     case bestDressed = "best_dressed"
     case bestMoment = "best_moment"
@@ -437,16 +594,46 @@ enum VibeLevel: Int, CaseIterable {
 struct CreatePartyRequest: Encodable, Sendable {
     let title: String
     let description: String?
-    let location: String?
-    let partyDate: Date?
+    let locationName: String?
+    let locationLat: Double?
+    let locationLng: Double?
+    let startsAt: Date?
+    let endsAt: Date?
     let maxGuests: Int?
+    let privacy: PartyPrivacy?
+    let status: PartyState?
 
     enum CodingKeys: String, CodingKey {
         case title
         case description
-        case location
-        case partyDate = "party_date"
+        case locationName = "location_name"
+        case locationLat = "location_lat"
+        case locationLng = "location_lng"
+        case startsAt = "starts_at"
+        case endsAt = "ends_at"
         case maxGuests = "max_guests"
+        case privacy
+        case status
+    }
+
+    // Convenience initializer with old parameter names
+    init(
+        title: String,
+        description: String? = nil,
+        location: String? = nil,
+        partyDate: Date? = nil,
+        maxGuests: Int? = nil
+    ) {
+        self.title = title
+        self.description = description
+        self.locationName = location
+        self.locationLat = nil
+        self.locationLng = nil
+        self.startsAt = partyDate
+        self.endsAt = nil
+        self.maxGuests = maxGuests
+        self.privacy = .inviteOnly
+        self.status = PartyState.active
     }
 }
 

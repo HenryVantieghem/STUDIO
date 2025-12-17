@@ -26,8 +26,8 @@ final class FeedViewModel {
 
     var selectedTab: FeedTab = .active
 
-    // Mock data mode for development
-    var useMockData = true
+    // Mock data mode for development - set to false for live Supabase data
+    var useMockData = false
 
     private let feedService = FeedService()
     private var pastPartiesOffset = 0

@@ -200,7 +200,7 @@ final class PartyDetailViewModel {
     func endParty() async {
         do {
             try await partyService.endParty(id: party.id)
-            party.isActive = false
+            party.status = .ended
         } catch {
             self.error = error
             showError = true
