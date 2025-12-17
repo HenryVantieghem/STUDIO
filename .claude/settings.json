@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '\\n\\033[1;33m[Commit Reminder]\\033[0m Files were modified. Consider committing your changes with: git add . && git commit -m \"your message\"\\n'"
+          }
+        ]
+      }
+    ]
+  }
+}

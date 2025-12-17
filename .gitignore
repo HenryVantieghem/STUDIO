@@ -1,0 +1,98 @@
+# ===== iOS/Xcode =====
+
+# Build artifacts
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode user data
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Xcode workspace settings (personal preferences)
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+
+# ===== macOS =====
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ===== IDE/Editor =====
+.cursor/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== Claude Code =====
+.mcp.json
+.claude/settings.local.json
+
+# ===== Dependencies =====
+
+# CocoaPods
+Pods/
+Podfile.lock
+*.xcworkspace
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Carthage
+Carthage/Build/
+Carthage/Checkouts/
+
+# ===== Secrets & Credentials =====
+*.pem
+*.p12
+*.p8
+*.key
+*.mobileprovision
+*.provisionprofile
+Secrets.plist
+.env
+.env.*
+*.xcconfig
+
+# ===== Fastlane =====
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/
+
+# ===== Testing =====
+*.coverage
+coverage/
+.coverage.*
+*.gcda
+*.gcno
+*.gcov
+
+# ===== Archives =====
+*.xcarchive
+
+# ===== Playgrounds =====
+timeline.xctimeline
+playground.xcworkspace
+
+# ===== App-specific =====
+*.app
+*.framework
+*.dylib
+*.a
+
+# ===== Misc =====
+*.log
+*.tmp
+*.temp
+.vagrant/
