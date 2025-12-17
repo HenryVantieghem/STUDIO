@@ -23,6 +23,7 @@ struct AddMediaSheet: View {
 
     // Camera state
     @State private var showCamera = false
+    @State private var showDualCamera = false
     @State private var cameraPermissionDenied = false
 
     // Photo picker state
@@ -111,6 +112,12 @@ struct AddMediaSheet: View {
                     showCamera = false
                 }
             }
+            .fullScreenCover(isPresented: $showDualCamera) {
+                DualCameraSheet(partyId: partyId) { mediaType, data, caption in
+                    onMediaAdded?(mediaType, data, caption)
+                    dismiss()
+                }
+            }
             .onChange(of: selectedItem) { _, newValue in
                 Task {
                     await loadSelectedImage(newValue)
@@ -143,38 +150,67 @@ struct AddMediaSheet: View {
         VStack(spacing: 20) {
             Spacer()
 
-            // Camera icon placeholder
+            // Dual camera preview icon
             ZStack {
                 Rectangle()
                     .fill(Color.studioSurface)
-                    .frame(width: 120, height: 120)
+                    .frame(width: 140, height: 100)
 
+                // Main camera icon
                 Image(systemName: "camera.fill")
-                    .font(.system(size: 48, weight: .ultraLight))
+                    .font(.system(size: 36, weight: .ultraLight))
                     .foregroundStyle(Color.studioMuted)
+
+                // PiP indicator (top-left)
+                Rectangle()
+                    .fill(Color.studioDeepBlack)
+                    .frame(width: 35, height: 45)
+                    .overlay {
+                        Rectangle()
+                            .stroke(Color.studioChrome, lineWidth: 1)
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 16, weight: .ultraLight))
+                            .foregroundStyle(Color.studioMuted)
+                    }
+                    .offset(x: -45, y: -20)
             }
             .overlay {
                 Rectangle()
-                    .stroke(Color.studioLine, lineWidth: 0.5)
+                    .stroke(Color.studioLine, lineWidth: 1)
             }
 
-            // Capture button
+            // Dual camera capture button
             Button {
-                checkCameraPermission()
+                showDualCamera = true
             } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "camera.fill")
+                    Image(systemName: "camera.on.rectangle.fill")
                         .font(.system(size: 16, weight: .regular))
-                    Text("CAPTURE")
+                    Text("DUAL CAPTURE")
                         .font(StudioTypography.labelLarge)
                         .tracking(StudioTypography.trackingWide)
                 }
                 .foregroundStyle(Color.studioBlack)
-                .frame(width: 200, height: 56)
+                .frame(width: 220, height: 56)
                 .background(Color.studioChrome)
             }
             .buttonStyle(.plain)
             .contentShape(Rectangle())
+
+            // Single camera option
+            Button {
+                checkCameraPermission()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "camera")
+                        .font(.system(size: 14, weight: .light))
+                    Text("SINGLE CAMERA")
+                        .font(StudioTypography.labelSmall)
+                        .tracking(StudioTypography.trackingNormal)
+                }
+                .foregroundStyle(Color.studioMuted)
+            }
+            .buttonStyle(.plain)
 
             Spacer()
         }
