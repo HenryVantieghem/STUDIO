@@ -17,9 +17,22 @@ final class PartyService: Sendable {
 
     /// Create a new party
     func createParty(_ request: CreatePartyRequest) async throws -> Party {
+        // Get current user ID for created_by
+        let userId = try await supabase.auth.session.user.id
+
+        // Create request with created_by set
+        let fullRequest = CreatePartyRequest(
+            title: request.title,
+            description: request.description,
+            location: request.locationName,
+            partyDate: request.startsAt,
+            maxGuests: request.maxGuests,
+            createdBy: userId
+        )
+
         let party: Party = try await supabase
             .from("parties")
-            .insert(request)
+            .insert(fullRequest)
             .select()
             .single()
             .execute()

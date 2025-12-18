@@ -130,17 +130,44 @@ struct FeedView: View {
         }
     }
 
-    // MARK: - Create Party Button
+    // MARK: - Create Party Button (Brutalist)
 
     private var createPartyButton: some View {
         Button {
             showCreateParty = true
         } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 14, weight: .medium, design: .monospaced))
-                .foregroundStyle(Color.studioBlack)
-                .frame(width: 36, height: 36)
-                .background(Color.studioChrome)
+            ZStack {
+                // Shadow layer (offset for brutalist depth)
+                Rectangle()
+                    .fill(Color.studioChrome)
+                    .frame(width: 44, height: 44)
+                    .offset(x: 3, y: 3)
+
+                // Main button
+                Rectangle()
+                    .fill(Color.studioBlack)
+                    .frame(width: 44, height: 44)
+                    .overlay {
+                        // Thick border
+                        Rectangle()
+                            .stroke(Color.studioChrome, lineWidth: 2)
+                    }
+                    .overlay {
+                        // Plus icon
+                        VStack(spacing: 0) {
+                            Rectangle()
+                                .fill(Color.studioChrome)
+                                .frame(width: 2, height: 16)
+
+                        }
+                        .overlay {
+                            Rectangle()
+                                .fill(Color.studioChrome)
+                                .frame(width: 16, height: 2)
+                        }
+                    }
+            }
+            .frame(width: 50, height: 50)
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())

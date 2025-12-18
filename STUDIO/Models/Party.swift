@@ -602,6 +602,7 @@ struct CreatePartyRequest: Encodable, Sendable {
     let maxGuests: Int?
     let privacy: PartyPrivacy?
     let status: PartyState?
+    let createdBy: UUID?
 
     enum CodingKeys: String, CodingKey {
         case title
@@ -614,6 +615,7 @@ struct CreatePartyRequest: Encodable, Sendable {
         case maxGuests = "max_guests"
         case privacy
         case status
+        case createdBy = "created_by"
     }
 
     // Convenience initializer with old parameter names
@@ -622,7 +624,8 @@ struct CreatePartyRequest: Encodable, Sendable {
         description: String? = nil,
         location: String? = nil,
         partyDate: Date? = nil,
-        maxGuests: Int? = nil
+        maxGuests: Int? = nil,
+        createdBy: UUID? = nil
     ) {
         self.title = title
         self.description = description
@@ -634,6 +637,7 @@ struct CreatePartyRequest: Encodable, Sendable {
         self.maxGuests = maxGuests
         self.privacy = .inviteOnly
         self.status = PartyState.active
+        self.createdBy = createdBy
     }
 }
 
