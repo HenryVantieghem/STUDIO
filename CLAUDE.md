@@ -395,6 +395,171 @@ party_comments, party_statuses, poll_votes, party_guests, notifications
 
 ---
 
+## Supabase Security & Best Practices
+
+### Storage Security (CRITICAL)
+
+**party-media Bucket RLS**:
+```sql
+-- ✅ SECURE: Only party members can upload
+CREATE POLICY "Party members can upload party media" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (
+    bucket_id = 'party-media'
+    AND (SELECT auth.uid()) IS NOT NULL
+    AND (
+        EXISTS (
+            SELECT 1 FROM party_hosts ph
+            WHERE ph.party_id::text = (storage.foldername(name))[1]
+            AND ph.user_id = (SELECT auth.uid())
+        )
+        OR EXISTS (
+            SELECT 1 FROM party_guests pg
+            WHERE pg.party_id::text = (storage.foldername(name))[1]
+            AND pg.user_id = (SELECT auth.uid())
+            AND pg.status = 'accepted'
+        )
+    )
+);
+```
+
+**Signed URL Expiry**:
+```swift
+// ✅ CORRECT: 24-hour expiry
+.createSignedURL(path: fileName, expiresIn: 86400) // 24 hours
+
+// ❌ WRONG: 7-day expiry (security risk)
+.createSignedURL(path: fileName, expiresIn: 3600 * 24 * 7)
+```
+
+**Storage Path Pattern**:
+```swift
+// ✅ CORRECT: {partyId}/{mediaId}.jpg
+let fileName = "\(partyId.uuidString)/\(UUID().uuidString).jpg"
+
+// ❌ WRONG: Arbitrary paths or missing party validation
+let fileName = "uploads/\(UUID().uuidString).jpg"
+```
+
+### Realtime Subscriptions
+
+**Poll Vote Filtering** (IMPORTANT):
+```swift
+// Realtime subscriptions to poll_votes receive ALL votes (not just this party's)
+// MUST filter client-side:
+
+private func handlePollVoteUpdate(_ vote: PollVote, action: ChangeAction) {
+    // ✅ Filter by party's polls
+    guard polls.contains(where: { $0.id == vote.pollId }) else {
+        return // Ignore votes from other parties
+    }
+
+    // Process vote...
+}
+```
+
+**Subscription Pattern**:
+```swift
+// ✅ Filter by party_id where possible
+let commentsChanges = await channel.postgresChange(
+    AnyAction.self,
+    schema: "public",
+    table: "party_comments",
+    filter: "party_id=eq.\(partyId.uuidString)"
+)
+
+// ⚠️ Can't filter poll_votes by party (no direct party_id)
+// Must filter client-side in handler
+```
+
+### RLS Policy Patterns
+
+**Avoid Infinite Recursion**:
+```sql
+-- ❌ WRONG: Causes infinite recursion
+CREATE POLICY "View parties" ON parties
+FOR SELECT USING (
+    EXISTS (
+        SELECT 1 FROM party_guests pg
+        WHERE pg.party_id = parties.id  -- ← Queries parties from parties policy
+    )
+);
+
+-- ✅ CORRECT: Use separate policies
+CREATE POLICY "View own parties" ON parties
+FOR SELECT USING (created_by = (SELECT auth.uid()));
+
+CREATE POLICY "View invited parties" ON parties
+FOR SELECT USING (
+    EXISTS (
+        SELECT 1 FROM party_guests pg
+        WHERE pg.party_id = parties.id
+        AND pg.user_id = (SELECT auth.uid())
+    )
+);
+```
+
+**Performance Optimization**:
+```sql
+-- ✅ Wrap auth.uid() in SELECT for caching
+WHERE user_id = (SELECT auth.uid())
+
+-- ❌ Don't call auth.uid() directly multiple times
+WHERE auth.uid() = user_id
+```
+
+### Security Checklist
+
+**Before Deploying Storage Features**:
+- [ ] Storage RLS policies validate party membership
+- [ ] Signed URLs use 24-hour expiry (86400 seconds)
+- [ ] Upload paths follow `{partyId}/{mediaId}.ext` pattern
+- [ ] File size limits enforced (5MB avatars, 100MB party-media)
+
+**Before Deploying Realtime Features**:
+- [ ] Subscriptions filter by party_id where possible
+- [ ] Client-side filtering for cross-party data (poll_votes)
+- [ ] RLS policies don't cause infinite recursion
+- [ ] Handlers validate data belongs to current context
+
+**Before Deploying Database Features**:
+- [ ] INSERT policies use WITH CHECK (not USING)
+- [ ] RLS policies use (SELECT auth.uid()) for performance
+- [ ] No circular dependencies in RLS policies
+- [ ] Indexes exist on frequently joined columns
+
+### Common Pitfalls
+
+**Silent RLS Failures**:
+```swift
+// ⚠️ RLS blocks return empty arrays, not errors
+let guests: [PartyGuest] = try await supabase
+    .from("party_guests")
+    .select()
+    .execute()
+    .value  // Returns [] if RLS blocks (no error thrown)
+
+// ✅ Add explicit permission checks for better UX
+guard try await canViewParty(partyId) else {
+    throw AppError.accessDenied
+}
+```
+
+**Storage Path Manipulation**:
+```swift
+// ❌ WRONG: User could manipulate partyId
+func uploadMedia(userProvidedPath: String) {
+    // User sends: "../other-party/malicious.jpg"
+}
+
+// ✅ CORRECT: Always construct paths server-side
+func uploadMedia(partyId: UUID, image: UIImage) {
+    let fileName = "\(partyId.uuidString)/\(UUID().uuidString).jpg"
+}
+```
+
+---
+
 ## Quick Reference
 - **iOS 26.1** | **Xcode 26.2** | **Swift 6.2** | **Supabase Swift 2.x**
 - **Supabase Project**: bhtexrnnrrymbhqonxfw
