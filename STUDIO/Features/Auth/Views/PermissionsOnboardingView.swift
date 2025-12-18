@@ -482,23 +482,21 @@ struct PermissionsOnboardingView: View {
     }
 
     private func requestCameraPermission() {
-        AVCaptureDevice.requestAccess(for: .video) { granted in
-            Task { @MainActor in
-                cameraStatus = granted ? .authorized : .denied
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    currentStep = .photos
-                }
+        Task {
+            let granted = await AVCaptureDevice.requestAccess(for: .video)
+            cameraStatus = granted ? .authorized : .denied
+            withAnimation(.easeInOut(duration: 0.3)) {
+                currentStep = .photos
             }
         }
     }
 
     private func requestPhotosPermission() {
-        PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
-            Task { @MainActor in
-                photosStatus = status
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    currentStep = .complete
-                }
+        Task {
+            let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+            photosStatus = status
+            withAnimation(.easeInOut(duration: 0.3)) {
+                currentStep = .complete
             }
         }
     }
