@@ -101,7 +101,10 @@ final class RealtimeService: Sendable {
                 filter: "party_id=eq.\(partyId.uuidString)"
             )
 
-            // Subscribe to poll_votes (need to join through polls for this party)
+            // Subscribe to poll_votes
+            // NOTE: Realtime doesn't support filtering by joins/subqueries, so we receive
+            // ALL poll_votes. The consuming ViewModel MUST filter by checking if poll_id
+            // belongs to this party's polls to avoid processing votes from other parties.
             let pollVoteChanges = await channel.postgresChange(
                 AnyAction.self,
                 schema: "public",

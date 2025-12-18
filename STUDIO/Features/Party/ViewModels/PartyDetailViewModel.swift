@@ -334,6 +334,13 @@ final class PartyDetailViewModel {
     }
 
     private func handlePollVoteUpdate(_ vote: PollVote, action: ChangeAction) {
+        // Filter: Only process votes for this party's polls
+        // (Realtime subscriptions receive ALL poll_votes, not just this party's)
+        guard polls.contains(where: { $0.id == vote.pollId }) else {
+            log.debug("Ignoring poll vote from different party", category: .realtime)
+            return
+        }
+
         // Refresh polls to get updated vote counts
         Task {
             do {

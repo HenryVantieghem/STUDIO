@@ -111,7 +111,7 @@ final class StorageService {
         // Get signed URL (private bucket)
         let signedUrl = try await supabase.storage
             .from(Bucket.partyMedia.rawValue)
-            .createSignedURL(path: fileName, expiresIn: 3600 * 24 * 7) // 7 days
+            .createSignedURL(path: fileName, expiresIn: 86400) // 24 hours
             .absoluteString
 
         // Create media record
@@ -156,7 +156,7 @@ final class StorageService {
         // Get signed URL
         let signedUrl = try await supabase.storage
             .from(Bucket.partyMedia.rawValue)
-            .createSignedURL(path: fileName, expiresIn: 3600 * 24 * 7)
+            .createSignedURL(path: fileName, expiresIn: 86400) // 24 hours
             .absoluteString
 
         // Generate thumbnail
@@ -229,7 +229,7 @@ final class StorageService {
 
         let signedUrl = try await supabase.storage
             .from(Bucket.partyMedia.rawValue)
-            .createSignedURL(path: fileName, expiresIn: 3600 * 24 * 7)
+            .createSignedURL(path: fileName, expiresIn: 86400) // 24 hours
             .absoluteString
 
         return signedUrl
@@ -248,7 +248,7 @@ final class StorageService {
     func refreshSignedUrl(path: String, bucket: Bucket = .partyMedia) async throws -> String {
         let signedUrl = try await supabase.storage
             .from(bucket.rawValue)
-            .createSignedURL(path: path, expiresIn: 3600 * 24 * 7)
+            .createSignedURL(path: path, expiresIn: 86400) // 24 hours
             .absoluteString
 
         return signedUrl
