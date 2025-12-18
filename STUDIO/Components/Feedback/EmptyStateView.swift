@@ -13,13 +13,12 @@ import SwiftUI
 
 private let pixelFontName = "VT323"
 
-// MARK: - Scaled Sizes for Empty States
+// MARK: - Sizes for Empty States
 
-@MainActor
 private enum EmptyStateSizes {
-    @ScaledMetric(relativeTo: .title3) static var iconSize: CGFloat = 40
-    @ScaledMetric(relativeTo: .title3) static var titleSize: CGFloat = 20
-    @ScaledMetric(relativeTo: .body) static var messageSize: CGFloat = 14
+    static let iconSize: CGFloat = 40
+    static let titleSize: CGFloat = 20
+    static let messageSize: CGFloat = 14
 }
 
 // MARK: - Empty State View

@@ -15,31 +15,29 @@ import SwiftUI
 /// VT323 - A more readable pixel font with taller characters
 private let pixelFontName = "VT323"
 
-// MARK: - Dynamic Type Scaled Sizes
+// MARK: - Typography Sizes (Fixed values)
 
-/// Scaled font sizes for Dynamic Type accessibility support
-/// These scale proportionally with user's preferred text size
-@MainActor
+/// Base font sizes for typography - Dynamic Type handled via system
 enum StudioScaledSizes {
-    // Display sizes - scale with .largeTitle
-    @ScaledMetric(relativeTo: .largeTitle) static var displayLarge: CGFloat = 48
-    @ScaledMetric(relativeTo: .largeTitle) static var displayMedium: CGFloat = 36
-    @ScaledMetric(relativeTo: .title) static var displaySmall: CGFloat = 28
+    // Display sizes
+    static let displayLarge: CGFloat = 48
+    static let displayMedium: CGFloat = 36
+    static let displaySmall: CGFloat = 28
 
-    // Headline sizes - scale with .title variants
-    @ScaledMetric(relativeTo: .title2) static var headlineLarge: CGFloat = 24
-    @ScaledMetric(relativeTo: .title3) static var headlineMedium: CGFloat = 20
-    @ScaledMetric(relativeTo: .headline) static var headlineSmall: CGFloat = 18
+    // Headline sizes
+    static let headlineLarge: CGFloat = 24
+    static let headlineMedium: CGFloat = 20
+    static let headlineSmall: CGFloat = 18
 
-    // Body sizes - scale with .body
-    @ScaledMetric(relativeTo: .body) static var bodyLarge: CGFloat = 16
-    @ScaledMetric(relativeTo: .subheadline) static var bodyMedium: CGFloat = 14
-    @ScaledMetric(relativeTo: .footnote) static var bodySmall: CGFloat = 12
+    // Body sizes
+    static let bodyLarge: CGFloat = 16
+    static let bodyMedium: CGFloat = 14
+    static let bodySmall: CGFloat = 12
 
-    // Label sizes - scale with .caption variants
-    @ScaledMetric(relativeTo: .callout) static var labelLarge: CGFloat = 16
-    @ScaledMetric(relativeTo: .caption) static var labelMedium: CGFloat = 14
-    @ScaledMetric(relativeTo: .caption2) static var labelSmall: CGFloat = 12
+    // Label sizes
+    static let labelLarge: CGFloat = 16
+    static let labelMedium: CGFloat = 14
+    static let labelSmall: CGFloat = 12
 }
 
 // MARK: - Pixel Afterdark Typography
@@ -127,8 +125,7 @@ extension Font {
 // MARK: - View Modifiers for Typography (Dynamic Type Enabled)
 
 extension View {
-    /// Apply display large style - Hero text (scales with Dynamic Type)
-    @MainActor
+    /// Apply display large style - Hero text
     func studioDisplayLarge() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.displayLarge))
@@ -137,8 +134,7 @@ extension View {
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply display medium style (scales with Dynamic Type)
-    @MainActor
+    /// Apply display medium style
     func studioDisplayMedium() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.displayMedium))
@@ -147,8 +143,7 @@ extension View {
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply display small style (scales with Dynamic Type)
-    @MainActor
+    /// Apply display small style
     func studioDisplaySmall() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.displaySmall))
@@ -157,8 +152,7 @@ extension View {
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply headline large style (scales with Dynamic Type)
-    @MainActor
+    /// Apply headline large style
     func studioHeadlineLarge() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.headlineLarge))
@@ -167,8 +161,7 @@ extension View {
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply headline medium style (scales with Dynamic Type)
-    @MainActor
+    /// Apply headline medium style
     func studioHeadlineMedium() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.headlineMedium))
@@ -177,8 +170,7 @@ extension View {
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply headline small style (scales with Dynamic Type)
-    @MainActor
+    /// Apply headline small style
     func studioHeadlineSmall() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.headlineSmall))
@@ -187,8 +179,7 @@ extension View {
             .foregroundStyle(Color.studioPrimary)
     }
 
-    /// Apply body large style (scales with Dynamic Type)
-    @MainActor
+    /// Apply body large style
     func studioBodyLarge() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.bodyLarge))
@@ -196,8 +187,7 @@ extension View {
             .foregroundStyle(Color.studioSecondary)
     }
 
-    /// Apply body medium style (scales with Dynamic Type)
-    @MainActor
+    /// Apply body medium style
     func studioBodyMedium() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.bodyMedium))
@@ -205,8 +195,7 @@ extension View {
             .foregroundStyle(Color.studioSecondary)
     }
 
-    /// Apply body small style (scales with Dynamic Type)
-    @MainActor
+    /// Apply body small style
     func studioBodySmall() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.bodySmall))
@@ -214,8 +203,7 @@ extension View {
             .foregroundStyle(Color.studioMuted)
     }
 
-    /// Apply label large style (scales with Dynamic Type)
-    @MainActor
+    /// Apply label large style
     func studioLabelLarge() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.labelLarge))
@@ -224,8 +212,7 @@ extension View {
             .foregroundStyle(Color.studioSecondary)
     }
 
-    /// Apply label medium style (scales with Dynamic Type)
-    @MainActor
+    /// Apply label medium style
     func studioLabelMedium() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.labelMedium))
@@ -234,8 +221,7 @@ extension View {
             .foregroundStyle(Color.studioMuted)
     }
 
-    /// Apply label small style (scales with Dynamic Type)
-    @MainActor
+    /// Apply label small style
     func studioLabelSmall() -> some View {
         self
             .font(.custom(pixelFontName, size: StudioScaledSizes.labelSmall))

@@ -29,7 +29,7 @@ struct PartyMediaCarousel: View {
                 carouselContent
             }
         }
-        .frame(height: UIScreen.main.bounds.width) // Square aspect ratio like Instagram
+        .aspectRatio(1, contentMode: .fit) // Square aspect ratio like Instagram
         .background(Color.studioDeepBlack)
         .sheet(item: $selectedMedia) { media in
             MediaDetailView(media: media)

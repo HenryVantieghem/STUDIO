@@ -263,7 +263,7 @@ struct AddMediaSheet: View {
                     .scaledToFit()
             }
             .frame(maxWidth: .infinity)
-            .frame(height: UIScreen.main.bounds.width)
+            .aspectRatio(1, contentMode: .fit)
 
             // Divider
             Rectangle()
@@ -410,7 +410,7 @@ struct CameraCaptureView: View {
     var onCapture: (UIImage) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var cameraModel = CameraModel()
+    @State private var cameraModel = CameraModel()
 
     var body: some View {
         ZStack {
@@ -492,12 +492,13 @@ struct CameraCaptureView: View {
 // MARK: - Camera Model
 
 /// Camera session manager
-class CameraModel: NSObject, ObservableObject {
+@Observable
+class CameraModel: NSObject {
     let session = AVCaptureSession()
     private var photoOutput = AVCapturePhotoOutput()
     private var captureCompletion: ((UIImage?) -> Void)?
 
-    @Published var flashMode: AVCaptureDevice.FlashMode = .off
+    var flashMode: AVCaptureDevice.FlashMode = .off
 
     func configure() async {
         guard await AVCaptureDevice.requestAccess(for: .video) else { return }

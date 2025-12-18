@@ -13,19 +13,18 @@ import SwiftUI
 
 private let pixelFontName = "VT323"
 
-// MARK: - Scaled Font Sizes (Dynamic Type Support)
+// MARK: - Button Sizes (Fixed values - Dynamic Type handled by system)
 
-/// Base sizes that scale with Dynamic Type
-@MainActor
+/// Base sizes for button styling
 enum StudioButtonSizes {
-    @ScaledMetric(relativeTo: .body) static var primaryFont: CGFloat = 18
-    @ScaledMetric(relativeTo: .body) static var secondaryFont: CGFloat = 18
-    @ScaledMetric(relativeTo: .caption) static var tertiaryFont: CGFloat = 16
-    @ScaledMetric(relativeTo: .caption) static var ghostFont: CGFloat = 14
-    @ScaledMetric(relativeTo: .caption) static var pillFont: CGFloat = 14
-    @ScaledMetric(relativeTo: .title3) static var heroFont: CGFloat = 22
-    @ScaledMetric(relativeTo: .body) static var buttonHeight: CGFloat = 48
-    @ScaledMetric(relativeTo: .title3) static var heroHeight: CGFloat = 56
+    static let primaryFont: CGFloat = 18
+    static let secondaryFont: CGFloat = 18
+    static let tertiaryFont: CGFloat = 16
+    static let ghostFont: CGFloat = 14
+    static let pillFont: CGFloat = 14
+    static let heroFont: CGFloat = 22
+    static let buttonHeight: CGFloat = 48
+    static let heroHeight: CGFloat = 56
 }
 
 // MARK: - Haptic Button Wrapper
