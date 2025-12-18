@@ -219,9 +219,9 @@ final class NotificationService {
     }
 }
 
-// MARK: - Notification Types
+// MARK: - Push Notification Types
 
-enum NotificationType: String, Codable {
+enum PushNotificationType: String, Codable, Sendable {
     case partyInvite = "party_invite"
     case partyReminder = "party_reminder"
     case newPoll = "new_poll"
@@ -234,8 +234,8 @@ enum NotificationType: String, Codable {
 
 // MARK: - Push Notification Payload
 
-struct PushNotificationPayload: Codable {
-    let type: NotificationType
+struct PushNotificationPayload: Codable, Sendable {
+    let type: PushNotificationType
     let title: String
     let body: String
     let partyId: UUID?

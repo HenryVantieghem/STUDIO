@@ -6,25 +6,63 @@
 //
 
 import Foundation
-import Supabase
-import Realtime
+@preconcurrency import Supabase
+@preconcurrency import Realtime
+
+// MARK: - Thread-Safe Box
+
+/// A thread-safe box for Sendable conformance
+final class SendableBox<T>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value: T
+
+    init(_ value: T) {
+        self._value = value
+    }
+
+    var value: T {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _value
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _value = newValue
+        }
+    }
+
+    func withLock<R>(_ body: (inout T) -> R) -> R {
+        lock.lock()
+        defer { lock.unlock() }
+        return body(&_value)
+    }
+}
 
 // MARK: - Realtime Service
 
 /// Manages Supabase Realtime subscriptions for live updates
 /// Supports all 5 realtime-enabled tables: party_comments, party_statuses, poll_votes, party_guests, notifications
-@Observable
-@MainActor
-final class RealtimeService {
+final class RealtimeService: Sendable {
     static let shared = RealtimeService()
 
     // MARK: - Properties
 
-    private var channels: [String: RealtimeChannelV2] = [:]
-    private var subscriptionTasks: [String: Task<Void, Never>] = [:]
+    private let channels = SendableBox<[String: RealtimeChannelV2]>([:])
+    private let subscriptionTasks = SendableBox<[String: Task<Void, Never>]>([:])
+    private let _isConnected = SendableBox<Bool>(false)
+    private let _connectionError = SendableBox<Error?>(nil)
 
-    var isConnected = false
-    var connectionError: Error?
+    var isConnected: Bool {
+        get { _isConnected.value }
+        set { _isConnected.value = newValue }
+    }
+
+    var connectionError: Error? {
+        get { _connectionError.value }
+        set { _connectionError.value = newValue }
+    }
 
     private init() {}
 
@@ -33,10 +71,10 @@ final class RealtimeService {
     /// Subscribe to all party activity (comments, statuses, polls, guests)
     func subscribeToParty(
         _ partyId: UUID,
-        onComment: @escaping (PartyComment, ChangeAction) -> Void,
-        onStatus: @escaping (PartyStatus, ChangeAction) -> Void,
-        onPollVote: @escaping (PollVote, ChangeAction) -> Void,
-        onGuestUpdate: @escaping (PartyGuest, ChangeAction) -> Void
+        onComment: @escaping @Sendable (PartyComment, ChangeAction) -> Void,
+        onStatus: @escaping @Sendable (PartyStatus, ChangeAction) -> Void,
+        onPollVote: @escaping @Sendable (PollVote, ChangeAction) -> Void,
+        onGuestUpdate: @escaping @Sendable (PartyGuest, ChangeAction) -> Void
     ) async {
         let channelKey = "party:\(partyId.uuidString)"
 
@@ -45,7 +83,7 @@ final class RealtimeService {
 
         do {
             let channel = supabase.realtimeV2.channel(channelKey)
-            channels[channelKey] = channel
+            channels.withLock { $0[channelKey] = channel }
 
             // Subscribe to party_comments
             let commentsChanges = await channel.postgresChange(
@@ -83,38 +121,48 @@ final class RealtimeService {
             connectionError = nil
 
             // Process comments stream
-            let commentsTask = Task {
+            let commentsTask = Task { @Sendable in
                 for await change in commentsChanges {
-                    await processChange(change, handler: onComment)
+                    if let (record, action) = Self.decodeChange(change, as: PartyComment.self) {
+                        onComment(record, action)
+                    }
                 }
             }
 
             // Process status stream
-            let statusTask = Task {
+            let statusTask = Task { @Sendable in
                 for await change in statusChanges {
-                    await processChange(change, handler: onStatus)
+                    if let (record, action) = Self.decodeChange(change, as: PartyStatus.self) {
+                        onStatus(record, action)
+                    }
                 }
             }
 
             // Process poll votes stream
-            let pollVotesTask = Task {
+            let pollVotesTask = Task { @Sendable in
                 for await change in pollVoteChanges {
-                    await processChange(change, handler: onPollVote)
+                    if let (record, action) = Self.decodeChange(change, as: PollVote.self) {
+                        onPollVote(record, action)
+                    }
                 }
             }
 
             // Process guest updates stream
-            let guestsTask = Task {
+            let guestsTask = Task { @Sendable in
                 for await change in guestChanges {
-                    await processChange(change, handler: onGuestUpdate)
+                    if let (record, action) = Self.decodeChange(change, as: PartyGuest.self) {
+                        onGuestUpdate(record, action)
+                    }
                 }
             }
 
             // Store tasks for cleanup
-            subscriptionTasks["\(channelKey):comments"] = commentsTask
-            subscriptionTasks["\(channelKey):statuses"] = statusTask
-            subscriptionTasks["\(channelKey):votes"] = pollVotesTask
-            subscriptionTasks["\(channelKey):guests"] = guestsTask
+            subscriptionTasks.withLock {
+                $0["\(channelKey):comments"] = commentsTask
+                $0["\(channelKey):statuses"] = statusTask
+                $0["\(channelKey):votes"] = pollVotesTask
+                $0["\(channelKey):guests"] = guestsTask
+            }
 
         } catch {
             connectionError = error
@@ -127,20 +175,21 @@ final class RealtimeService {
         let channelKey = "party:\(partyId.uuidString)"
 
         // Cancel all subscription tasks
-        subscriptionTasks["\(channelKey):comments"]?.cancel()
-        subscriptionTasks["\(channelKey):statuses"]?.cancel()
-        subscriptionTasks["\(channelKey):votes"]?.cancel()
-        subscriptionTasks["\(channelKey):guests"]?.cancel()
-
-        subscriptionTasks.removeValue(forKey: "\(channelKey):comments")
-        subscriptionTasks.removeValue(forKey: "\(channelKey):statuses")
-        subscriptionTasks.removeValue(forKey: "\(channelKey):votes")
-        subscriptionTasks.removeValue(forKey: "\(channelKey):guests")
+        subscriptionTasks.withLock {
+            $0["\(channelKey):comments"]?.cancel()
+            $0["\(channelKey):statuses"]?.cancel()
+            $0["\(channelKey):votes"]?.cancel()
+            $0["\(channelKey):guests"]?.cancel()
+            $0.removeValue(forKey: "\(channelKey):comments")
+            $0.removeValue(forKey: "\(channelKey):statuses")
+            $0.removeValue(forKey: "\(channelKey):votes")
+            $0.removeValue(forKey: "\(channelKey):guests")
+        }
 
         // Unsubscribe and remove channel
-        if let channel = channels[channelKey] {
+        let channel = channels.withLock { $0.removeValue(forKey: channelKey) }
+        if let channel = channel {
             await channel.unsubscribe()
-            channels.removeValue(forKey: channelKey)
         }
     }
 
@@ -149,7 +198,7 @@ final class RealtimeService {
     /// Subscribe to user notifications
     func subscribeToNotifications(
         _ userId: UUID,
-        onNotification: @escaping (AppNotification, ChangeAction) -> Void
+        onNotification: @escaping @Sendable (AppNotification, ChangeAction) -> Void
     ) async {
         let channelKey = "notifications:\(userId.uuidString)"
 
@@ -158,7 +207,7 @@ final class RealtimeService {
 
         do {
             let channel = supabase.realtimeV2.channel(channelKey)
-            channels[channelKey] = channel
+            channels.withLock { $0[channelKey] = channel }
 
             let notificationChanges = await channel.postgresChange(
                 AnyAction.self,
@@ -169,13 +218,15 @@ final class RealtimeService {
 
             await channel.subscribe()
 
-            let task = Task {
+            let task = Task { @Sendable in
                 for await change in notificationChanges {
-                    await processChange(change, handler: onNotification)
+                    if let (record, action) = Self.decodeChange(change, as: AppNotification.self) {
+                        onNotification(record, action)
+                    }
                 }
             }
 
-            subscriptionTasks[channelKey] = task
+            subscriptionTasks.withLock { $0[channelKey] = task }
 
         } catch {
             connectionError = error
@@ -186,12 +237,14 @@ final class RealtimeService {
     func unsubscribeFromNotifications(_ userId: UUID) async {
         let channelKey = "notifications:\(userId.uuidString)"
 
-        subscriptionTasks[channelKey]?.cancel()
-        subscriptionTasks.removeValue(forKey: channelKey)
+        subscriptionTasks.withLock {
+            $0[channelKey]?.cancel()
+            $0.removeValue(forKey: channelKey)
+        }
 
-        if let channel = channels[channelKey] {
+        let channel = channels.withLock { $0.removeValue(forKey: channelKey) }
+        if let channel = channel {
             await channel.unsubscribe()
-            channels.removeValue(forKey: channelKey)
         }
     }
 
@@ -199,55 +252,58 @@ final class RealtimeService {
 
     /// Unsubscribe from all channels
     func unsubscribeAll() async {
-        for task in subscriptionTasks.values {
+        let tasks = subscriptionTasks.withLock { tasks in
+            let values = Array(tasks.values)
+            tasks.removeAll()
+            return values
+        }
+        for task in tasks {
             task.cancel()
         }
-        subscriptionTasks.removeAll()
 
-        for channel in channels.values {
+        let allChannels = channels.withLock { chs in
+            let values = Array(chs.values)
+            chs.removeAll()
+            return values
+        }
+        for channel in allChannels {
             await channel.unsubscribe()
         }
-        channels.removeAll()
 
         isConnected = false
     }
 
     // MARK: - Private Helpers
 
-    /// Process a change event and decode the record
-    private func processChange<T: Decodable & Sendable>(
+    /// Decode a change event and return the record with action type
+    private static func decodeChange<T: Decodable>(
         _ change: AnyAction,
-        handler: @escaping (T, ChangeAction) -> Void
-    ) async {
+        as type: T.Type
+    ) -> (T, ChangeAction)? {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         decoder.keyDecodingStrategy = .convertFromSnakeCase
 
-        do {
-            switch change {
-            case .insert(let action):
-                if let data = try? JSONSerialization.data(withJSONObject: action.record),
-                   let record = try? decoder.decode(T.self, from: data) {
-                    handler(record, .insert)
-                }
+        switch change {
+        case .insert(let action):
+            if let data = try? JSONSerialization.data(withJSONObject: action.record),
+               let record = try? decoder.decode(T.self, from: data) {
+                return (record, .insert)
+            }
 
-            case .update(let action):
-                if let data = try? JSONSerialization.data(withJSONObject: action.record),
-                   let record = try? decoder.decode(T.self, from: data) {
-                    handler(record, .update)
-                }
+        case .update(let action):
+            if let data = try? JSONSerialization.data(withJSONObject: action.record),
+               let record = try? decoder.decode(T.self, from: data) {
+                return (record, .update)
+            }
 
-            case .delete(let action):
-                if let data = try? JSONSerialization.data(withJSONObject: action.oldRecord),
-                   let record = try? decoder.decode(T.self, from: data) {
-                    handler(record, .delete)
-                }
-
-            case .select:
-                // Initial data load - typically not used
-                break
+        case .delete(let action):
+            if let data = try? JSONSerialization.data(withJSONObject: action.oldRecord),
+               let record = try? decoder.decode(T.self, from: data) {
+                return (record, .delete)
             }
         }
+        return nil
     }
 }
 
@@ -260,74 +316,23 @@ enum ChangeAction: String, Sendable {
     case delete
 }
 
-// MARK: - App Notification Model
-
-/// Notification model for realtime updates
-struct AppNotification: Codable, Identifiable, Hashable, Sendable {
-    let id: UUID
-    let userId: UUID
-    let type: NotificationType
-    let title: String
-    let body: String?
-    let data: NotificationData?
-    let isRead: Bool
-    let createdAt: Date
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case userId = "user_id"
-        case type
-        case title
-        case body
-        case data
-        case isRead = "is_read"
-        case createdAt = "created_at"
-    }
-}
-
-/// Notification types
-enum NotificationType: String, Codable, Sendable {
-    case partyInvite = "party_invite"
-    case partyUpdate = "party_update"
-    case partyReminder = "party_reminder"
-    case newComment = "new_comment"
-    case newPoll = "new_poll"
-    case pollEnded = "poll_ended"
-    case newFollower = "new_follower"
-    case mention = "mention"
-    case system = "system"
-}
-
-/// Notification data payload
-struct NotificationData: Codable, Hashable, Sendable {
-    let partyId: UUID?
-    let commentId: UUID?
-    let pollId: UUID?
-    let fromUserId: UUID?
-
-    enum CodingKeys: String, CodingKey {
-        case partyId = "party_id"
-        case commentId = "comment_id"
-        case pollId = "poll_id"
-        case fromUserId = "from_user_id"
-    }
-}
+// MARK: - Note: AppNotification and NotificationData models are defined in User.swift
 
 // MARK: - Convenience Extensions
 
 extension RealtimeService {
     /// Check if subscribed to a specific party
     func isSubscribedToParty(_ partyId: UUID) -> Bool {
-        channels["party:\(partyId.uuidString)"] != nil
+        channels.value["party:\(partyId.uuidString)"] != nil
     }
 
     /// Check if subscribed to user notifications
     func isSubscribedToNotifications(_ userId: UUID) -> Bool {
-        channels["notifications:\(userId.uuidString)"] != nil
+        channels.value["notifications:\(userId.uuidString)"] != nil
     }
 
     /// Get count of active subscriptions
     var activeSubscriptionCount: Int {
-        channels.count
+        channels.value.count
     }
 }

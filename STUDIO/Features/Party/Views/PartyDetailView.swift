@@ -118,21 +118,28 @@ struct PartyDetailView: View {
             Text(vm.error?.localizedDescription ?? "An error occurred")
         }
         .sheet(isPresented: $showAddMedia) {
-            AddMediaSheet(partyId: party.id) { media in
-                vm.media.insert(contentsOf: media, at: 0)
+            AddMediaSheet(partyId: party.id) { mediaType, data, caption in
+                Task { await vm.refreshMedia() }
             }
         }
         .sheet(isPresented: $showCreatePoll) {
-            CreatePollView(partyId: party.id) { poll in
-                vm.polls.insert(poll, at: 0)
+            CreatePollView(partyId: party.id, guests: vm.guests) {
+                Task { await vm.loadPolls() }
             }
         }
         .sheet(isPresented: $showInviteGuests) {
-            InviteGuestsView(partyId: party.id)
+            InviteGuestsView(partyId: party.id) {
+                Task { await vm.loadGuests() }
+            }
         }
         .sheet(isPresented: $showStatusPicker) {
-            PartyStatusSheet(partyId: party.id) { status in
-                vm.statuses = [status] + vm.statuses.filter { $0.userId != status.userId }
+            PartyStatusSheet(
+                partyId: party.id,
+                statuses: vm.statuses,
+                currentUserStatus: vm.currentUserStatus,
+                isLoading: vm.isLoadingStatuses
+            ) { statusType, value, message in
+                Task { await vm.updateStatus(type: statusType, value: value, message: message) }
             }
         }
     }

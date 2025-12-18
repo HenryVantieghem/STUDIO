@@ -22,10 +22,24 @@ final class PartyDetailViewModel {
 
     var isLoading = false
     var isLoadingMore = false
+    var isLoadingStatuses = false
     var error: Error?
     var showError = false
 
     var selectedSection: PartySection = .media
+
+    // Cached current user ID (loaded async)
+    private var cachedCurrentUserId: UUID?
+
+    // Computed properties for convenience
+    var guests: [PartyGuest] {
+        party.guests ?? []
+    }
+
+    var currentUserStatus: PartyStatus? {
+        guard let userId = cachedCurrentUserId else { return nil }
+        return statuses.first { $0.userId == userId }
+    }
 
     private let partyService = PartyService()
     private let mediaService = MediaService()
@@ -69,6 +83,9 @@ final class PartyDetailViewModel {
         guard !isLoading else { return }
         isLoading = true
         error = nil
+
+        // Cache current user ID
+        cachedCurrentUserId = await AuthService.shared.currentUserId()
 
         do {
             // Refresh party details
@@ -193,6 +210,41 @@ final class PartyDetailViewModel {
             )
             // Insert at beginning and filter duplicates per user
             statuses = [newStatus] + statuses.filter { $0.userId != newStatus.userId }
+        } catch {
+            self.error = error
+            showError = true
+        }
+    }
+
+    /// Alias for postStatus for compatibility
+    func updateStatus(type: StatusType, value: Int, message: String?) async {
+        await postStatus(type: type, value: value, message: message)
+    }
+
+    func loadPolls() async {
+        do {
+            polls = try await socialService.getPolls(partyId: party.id)
+        } catch {
+            self.error = error
+            showError = true
+        }
+    }
+
+    func loadGuests() async {
+        do {
+            let updatedParty = try await partyService.getParty(id: party.id)
+            party = updatedParty
+        } catch {
+            self.error = error
+            showError = true
+        }
+    }
+
+    func refreshMedia() async {
+        do {
+            mediaOffset = 0
+            media = try await mediaService.getPartyMedia(partyId: party.id, limit: pageSize, offset: 0)
+            mediaOffset = pageSize
         } catch {
             self.error = error
             showError = true

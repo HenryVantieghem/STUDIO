@@ -101,7 +101,7 @@ struct UpdateUserPayload: Encodable, Sendable {
 struct AppNotification: Codable, Identifiable, Sendable, Hashable {
     let id: UUID
     let userId: UUID
-    let type: ActivityNotificationType
+    let type: NotificationType
     var title: String?
     var body: String?
     var data: NotificationData?
@@ -123,22 +123,40 @@ struct AppNotification: Codable, Identifiable, Sendable, Hashable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         userId = try container.decode(UUID.self, forKey: .userId)
-        type = try container.decode(ActivityNotificationType.self, forKey: .type)
+        type = try container.decode(NotificationType.self, forKey: .type)
         title = try container.decodeIfPresent(String.self, forKey: .title)
         body = try container.decodeIfPresent(String.self, forKey: .body)
         data = try container.decodeIfPresent(NotificationData.self, forKey: .data)
         read = try container.decodeIfPresent(Bool.self, forKey: .read) ?? false
         createdAt = try container.decode(Date.self, forKey: .createdAt)
     }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(userId, forKey: .userId)
+        try container.encode(type, forKey: .type)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encodeIfPresent(body, forKey: .body)
+        try container.encodeIfPresent(data, forKey: .data)
+        try container.encode(read, forKey: .read)
+        try container.encode(createdAt, forKey: .createdAt)
+    }
 }
 
-/// Activity notification types (for in-app notifications)
-enum ActivityNotificationType: String, Codable, Sendable {
+/// Notification types (for in-app notifications)
+enum NotificationType: String, Codable, Sendable, Hashable {
     case partyInvite = "party_invite"
+    case partyUpdate = "party_update"
+    case partyReminder = "party_reminder"
     case comment = "comment"
+    case newComment = "new_comment"
     case poll = "poll"
+    case newPoll = "new_poll"
+    case pollEnded = "poll_ended"
     case status = "status"
     case follow = "follow"
+    case newFollower = "new_follower"
     case mention = "mention"
     case media = "media"
     case system = "system"
@@ -146,10 +164,11 @@ enum ActivityNotificationType: String, Codable, Sendable {
     var icon: String {
         switch self {
         case .partyInvite: return "envelope"
-        case .comment: return "bubble.left"
-        case .poll: return "chart.bar"
+        case .partyUpdate, .partyReminder: return "party.popper"
+        case .comment, .newComment: return "bubble.left"
+        case .poll, .newPoll, .pollEnded: return "chart.bar"
         case .status: return "person.wave.2"
-        case .follow: return "person.badge.plus"
+        case .follow, .newFollower: return "person.badge.plus"
         case .mention: return "at"
         case .media: return "photo"
         case .system: return "bell"
@@ -157,7 +176,7 @@ enum ActivityNotificationType: String, Codable, Sendable {
     }
 }
 
-/// Notification data payload for follow notifications
+/// Notification data payload
 struct NotificationData: Codable, Sendable, Hashable {
     var followerId: UUID?
     var followerUsername: String?
@@ -165,6 +184,9 @@ struct NotificationData: Codable, Sendable, Hashable {
     var followerDisplayName: String?
     var partyId: UUID?
     var partyTitle: String?
+    var commentId: UUID?
+    var pollId: UUID?
+    var fromUserId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case followerId = "follower_id"
@@ -173,6 +195,9 @@ struct NotificationData: Codable, Sendable, Hashable {
         case followerDisplayName = "follower_display_name"
         case partyId = "party_id"
         case partyTitle = "party_title"
+        case commentId = "comment_id"
+        case pollId = "poll_id"
+        case fromUserId = "from_user_id"
     }
 }
 
