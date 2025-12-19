@@ -99,9 +99,9 @@ final class FeedService: Sendable {
                 hosts:party_hosts(*, user:profiles(*)),
                 guests:party_guests(status)
             """)
-            .gte("party_date", value: now)
+            .gte("starts_at", value: now)
             .in("id", values: allPartyIds.map { $0.uuidString })
-            .order("party_date", ascending: true)
+            .order("starts_at", ascending: true)
             .execute()
             .value
 

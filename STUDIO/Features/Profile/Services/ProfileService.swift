@@ -194,7 +194,7 @@ final class ProfileService: Sendable {
             .from("user_achievements")
             .select("""
                 *,
-                party:parties(id, title, cover_image_url, party_date)
+                party:parties(id, title, cover_image_url, starts_at)
             """)
             .eq("user_id", value: userId.uuidString)
             .order("awarded_at", ascending: false)

@@ -640,15 +640,15 @@ struct PartyEditSheet: View {
             // Update party in database
             var updates: [String: AnyEncodable] = [
                 "title": AnyEncodable(title),
-                "party_date": AnyEncodable(ISO8601DateFormatter().string(from: partyDate)),
-                "is_public": AnyEncodable(isPublic)
+                "starts_at": AnyEncodable(ISO8601DateFormatter().string(from: partyDate)),
+                "privacy": AnyEncodable(isPublic ? "public" : "invite_only")
             ]
 
             if !description.isEmpty {
                 updates["description"] = AnyEncodable(description)
             }
             if !location.isEmpty {
-                updates["location"] = AnyEncodable(location)
+                updates["location_name"] = AnyEncodable(location)
             }
             if let coverUrl = updatedParty.coverImageUrl {
                 updates["cover_image_url"] = AnyEncodable(coverUrl)

@@ -69,8 +69,8 @@ final class PartyService: Sendable {
 
         if let title { updates["title"] = AnyEncodable(title) }
         if let description { updates["description"] = AnyEncodable(description) }
-        if let location { updates["location"] = AnyEncodable(location) }
-        if let partyDate { updates["party_date"] = AnyEncodable(partyDate) }
+        if let location { updates["location_name"] = AnyEncodable(location) }
+        if let partyDate { updates["starts_at"] = AnyEncodable(partyDate) }
 
         guard !updates.isEmpty else { return }
 
