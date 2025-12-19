@@ -90,11 +90,11 @@ final class PartyService: Sendable {
             .execute()
     }
 
-    /// End a party (set is_active to false)
+    /// End a party (set status to ended)
     func endParty(id: UUID) async throws {
         let updates: [String: AnyEncodable] = [
-            "is_active": AnyEncodable(false),
-            "end_date": AnyEncodable(Date())
+            "status": AnyEncodable("ended"),
+            "ends_at": AnyEncodable(Date())
         ]
         try await supabase
             .from("parties")

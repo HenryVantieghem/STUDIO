@@ -70,7 +70,7 @@ final class FeedService: Sendable {
                 hosts:party_hosts(*, user:profiles(*)),
                 media_count:party_media(count)
             """)
-            .eq("is_active", value: true)
+            .eq("status", value: "active")
             .in("id", values: allPartyIds.map { $0.uuidString })
             .order("created_at", ascending: false)
             .execute()
@@ -127,9 +127,9 @@ final class FeedService: Sendable {
                 hosts:party_hosts(*, user:profiles(*)),
                 media_count:party_media(count)
             """)
-            .eq("is_active", value: false)
+            .eq("status", value: "ended")
             .in("id", values: allPartyIds.map { $0.uuidString })
-            .order("end_date", ascending: false)
+            .order("ends_at", ascending: false)
             .range(from: offset, to: offset + limit - 1)
             .execute()
             .value
