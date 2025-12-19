@@ -60,6 +60,14 @@ struct SearchUsersView: View {
             } message: {
                 Text(vm.error?.localizedDescription ?? "An error occurred")
             }
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .userProfile(let userId):
+                    ProfileView(userId: userId, isCurrentUser: false)
+                default:
+                    EmptyView()
+                }
+            }
         }
     }
 
@@ -290,13 +298,14 @@ struct SearchUserRowView: View {
                             size: 10,
                             color: isFollowing ? .studioPrimary : .studioBlack
                         )
-                        .frame(width: 80, height: 28)
+                        .frame(width: 90, height: 28)
                     } else {
                         Text(isFollowing ? "FOLLOWING" : "FOLLOW")
                             .font(StudioTypography.labelSmall)
                             .tracking(StudioTypography.trackingStandard)
                             .foregroundStyle(isFollowing ? Color.studioPrimary : Color.studioBlack)
-                            .frame(width: 80, height: 28)
+                            .padding(.horizontal, 12)
+                            .frame(height: 28)
                     }
                 }
                 .background(isFollowing ? Color.studioSurface : Color.studioChrome)
