@@ -394,25 +394,23 @@ struct CreatePartyView: View {
             .foregroundStyle(Color.studioBlack)
             .frame(maxWidth: .infinity)
             .frame(height: 56)
-            .background(title.isEmpty ? Color.studioMuted.opacity(0.3) : Color.studioChrome)
+            .background(Color.studioChrome)
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .disabled(title.isEmpty || isCreating)
+        .disabled(isCreating)
         .padding(.top, 8)
     }
 
     // MARK: - Create Party
 
     private func createParty() {
-        guard !title.isEmpty else { return }
-
         isCreating = true
 
         Task {
             do {
                 let request = CreatePartyRequest(
-                    title: title,
+                    title: title.isEmpty ? nil : title,
                     description: description.isEmpty ? nil : description,
                     location: location.isEmpty ? nil : location,
                     partyDate: hasDate ? partyDate : nil,

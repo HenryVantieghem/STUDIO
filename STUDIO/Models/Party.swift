@@ -592,7 +592,7 @@ enum VibeLevel: Int, CaseIterable {
 
 /// DTO for creating a new party
 struct CreatePartyRequest: Encodable, Sendable {
-    let title: String
+    let title: String?
     let description: String?
     let locationName: String?
     let locationLat: Double?
@@ -620,14 +620,15 @@ struct CreatePartyRequest: Encodable, Sendable {
 
     // Convenience initializer with old parameter names
     init(
-        title: String,
+        title: String? = nil,
         description: String? = nil,
         location: String? = nil,
         partyDate: Date? = nil,
         maxGuests: Int? = nil,
         createdBy: UUID? = nil
     ) {
-        self.title = title
+        // Use default title if none provided
+        self.title = title?.isEmpty == false ? title : "Untitled Party"
         self.description = description
         self.locationName = location
         self.locationLat = nil
