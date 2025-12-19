@@ -50,7 +50,7 @@ final class AuthService: Sendable {
 
     /// Sign in with email and password
     func signIn(email: String, password: String) async throws {
-        try await supabase.auth.signIn(
+        _ = try await supabase.auth.signIn(
             email: email,
             password: password
         )

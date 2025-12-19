@@ -52,9 +52,25 @@ class AuthViewModel {
     // MARK: - Initialization
 
     init() {
-        // Listen for auth state changes
+        // Check initial session state
         Task {
+            await checkInitialSession()
             await observeAuthState()
+        }
+    }
+
+    // MARK: - Initial Session Check
+
+    private func checkInitialSession() async {
+        do {
+            let session = try await supabase.auth.session
+            isAuthenticated = session != nil
+            if session != nil {
+                await loadCurrentUser()
+            }
+        } catch {
+            // No active session
+            isAuthenticated = false
         }
     }
 
