@@ -50,10 +50,43 @@ final class AuthService: Sendable {
 
     /// Sign in with email and password
     func signIn(email: String, password: String) async throws {
-        _ = try await supabase.auth.signIn(
-            email: email,
-            password: password
+        // #region agent log
+        DebugLogger.log(
+            location: "AuthService.swift:52",
+            message: "signIn: entry",
+            data: ["email": email],
+            hypothesisId: "C"
         )
+        // #endregion
+        
+        do {
+            let response = try await supabase.auth.signIn(
+                email: email,
+                password: password
+            )
+            
+            // #region agent log
+            DebugLogger.log(
+                location: "AuthService.swift:61",
+                message: "signIn: success",
+                data: ["userId": response.user.id.uuidString, "hasSession": response.session != nil],
+                hypothesisId: "C"
+            )
+            // #endregion
+        } catch {
+            // #region agent log
+            DebugLogger.log(
+                location: "AuthService.swift:69",
+                message: "signIn: error occurred",
+                data: [
+                    "error": error.localizedDescription,
+                    "errorType": String(describing: type(of: error))
+                ],
+                hypothesisId: "C"
+            )
+            // #endregion
+            throw error
+        }
     }
 
     /// Sign in with Apple

@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "appstore_icon_disco.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -12,6 +13,7 @@
           "value" : "dark"
         }
       ],
+      "filename" : "appstore_icon_disco 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -23,6 +25,7 @@
           "value" : "tinted"
         }
       ],
+      "filename" : "appstore_icon_disco 2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

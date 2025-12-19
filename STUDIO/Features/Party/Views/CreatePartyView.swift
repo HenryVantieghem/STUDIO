@@ -409,10 +409,11 @@ struct CreatePartyView: View {
 
         Task {
             do {
+                // Allow creating party with empty title (will use default "Untitled Party")
                 let request = CreatePartyRequest(
-                    title: title.isEmpty ? nil : title,
-                    description: description.isEmpty ? nil : description,
-                    location: location.isEmpty ? nil : location,
+                    title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : title,
+                    description: description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : description,
+                    location: location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : location,
                     partyDate: hasDate ? partyDate : nil,
                     maxGuests: maxGuests
                 )

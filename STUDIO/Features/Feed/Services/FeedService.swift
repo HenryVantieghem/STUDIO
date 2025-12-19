@@ -194,7 +194,7 @@ final class FeedService: Sendable {
             """)
             .eq("user_id", value: userId.uuidString)
             .eq("status", value: GuestStatus.pending.rawValue)
-            .order("invited_at", ascending: false)
+            .order("created_at", ascending: false)
             .execute()
             .value
 

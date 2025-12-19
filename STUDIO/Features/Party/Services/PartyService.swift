@@ -17,8 +17,26 @@ final class PartyService: Sendable {
 
     /// Create a new party
     func createParty(_ request: CreatePartyRequest) async throws -> Party {
+        // #region agent log
+        DebugLogger.log(
+            location: "PartyService.swift:19",
+            message: "createParty: entry",
+            data: ["title": request.title ?? "nil", "hasDescription": request.description != nil, "hasLocation": request.locationName != nil],
+            hypothesisId: "A"
+        )
+        // #endregion
+        
         // Get current user ID for created_by
         let userId = try await supabase.auth.session.user.id
+        
+        // #region agent log
+        DebugLogger.log(
+            location: "PartyService.swift:24",
+            message: "createParty: got userId",
+            data: ["userId": userId.uuidString],
+            hypothesisId: "A"
+        )
+        // #endregion
 
         // Create request with created_by set
         let fullRequest = CreatePartyRequest(
@@ -30,18 +48,60 @@ final class PartyService: Sendable {
             createdBy: userId
         )
 
-        let party: Party = try await supabase
-            .from("parties")
-            .insert(fullRequest)
-            .select()
-            .single()
-            .execute()
-            .value
+        // #region agent log
+        DebugLogger.log(
+            location: "PartyService.swift:35",
+            message: "createParty: before insert",
+            data: ["title": fullRequest.title ?? "nil", "createdBy": fullRequest.createdBy?.uuidString ?? "nil"],
+            hypothesisId: "A"
+        )
+        // #endregion
 
-        // Add creator as host
-        try await addHost(partyId: party.id, role: .creator)
+        do {
+            let party: Party = try await supabase
+                .from("parties")
+                .insert(fullRequest)
+                .select()
+                .single()
+                .execute()
+                .value
 
-        return party
+            // #region agent log
+            DebugLogger.log(
+                location: "PartyService.swift:43",
+                message: "createParty: party created",
+                data: ["partyId": party.id.uuidString],
+                hypothesisId: "A"
+            )
+            // #endregion
+
+            // Add creator as host
+            try await addHost(partyId: party.id, role: .creator)
+
+            // #region agent log
+            DebugLogger.log(
+                location: "PartyService.swift:50",
+                message: "createParty: host added, success",
+                data: ["partyId": party.id.uuidString],
+                hypothesisId: "A"
+            )
+            // #endregion
+
+            return party
+        } catch {
+            // #region agent log
+            DebugLogger.log(
+                location: "PartyService.swift:58",
+                message: "createParty: error occurred",
+                data: [
+                    "error": error.localizedDescription,
+                    "errorType": String(describing: type(of: error))
+                ],
+                hypothesisId: "A"
+            )
+            // #endregion
+            throw error
+        }
     }
 
     /// Get a party by ID with all relationships
@@ -107,6 +167,15 @@ final class PartyService: Sendable {
 
     /// Add a host to a party (up to 5)
     func addHost(partyId: UUID, userId: UUID? = nil, role: HostRole = .cohost) async throws {
+        // #region agent log
+        DebugLogger.log(
+            location: "PartyService.swift:152",
+            message: "addHost: entry",
+            data: ["partyId": partyId.uuidString, "role": role.rawValue, "hasUserId": userId != nil],
+            hypothesisId: "B"
+        )
+        // #endregion
+        
         let hostUserId: UUID
         if let userId {
             hostUserId = userId
@@ -120,10 +189,44 @@ final class PartyService: Sendable {
             "role": AnyEncodable(role.rawValue)
         ]
 
-        try await supabase
-            .from("party_hosts")
-            .insert(request)
-            .execute()
+        // #region agent log
+        DebugLogger.log(
+            location: "PartyService.swift:172",
+            message: "addHost: before insert",
+            data: ["partyId": partyId.uuidString, "userId": hostUserId.uuidString, "role": role.rawValue],
+            hypothesisId: "B"
+        )
+        // #endregion
+
+        do {
+            try await supabase
+                .from("party_hosts")
+                .insert(request)
+                .execute()
+            
+            // #region agent log
+            DebugLogger.log(
+                location: "PartyService.swift:182",
+                message: "addHost: insert successful",
+                data: ["partyId": partyId.uuidString],
+                hypothesisId: "B"
+            )
+            // #endregion
+        } catch {
+            // #region agent log
+            DebugLogger.log(
+                location: "PartyService.swift:189",
+                message: "addHost: error occurred",
+                data: [
+                    "error": error.localizedDescription,
+                    "errorType": String(describing: type(of: error)),
+                    "partyId": partyId.uuidString
+                ],
+                hypothesisId: "B"
+            )
+            // #endregion
+            throw error
+        }
     }
 
     /// Remove a host from a party
@@ -198,7 +301,7 @@ final class PartyService: Sendable {
             .from("party_guests")
             .select("*, user:profiles(*)")
             .eq("party_id", value: partyId.uuidString)
-            .order("invited_at", ascending: false)
+            .order("created_at", ascending: false)
             .execute()
             .value
 
