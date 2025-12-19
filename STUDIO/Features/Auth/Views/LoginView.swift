@@ -153,7 +153,7 @@ struct LoginView: View {
                     ProgressView()
                         .tint(Color.studioBlack)
                 } else {
-                    Text("ENTER THE PARTY")
+                    Text("SIGN IN")
                         .font(StudioTypography.labelLarge)
                         .tracking(StudioTypography.trackingWide)
                 }
@@ -197,7 +197,7 @@ struct LoginView: View {
                     showSignUp = true
                 }
             } label: {
-                Text("GET ON THE GUEST LIST")
+                Text("SIGN UP")
                     .font(StudioTypography.labelLarge)
                     .tracking(StudioTypography.trackingWide)
                     .frame(maxWidth: .infinity)
