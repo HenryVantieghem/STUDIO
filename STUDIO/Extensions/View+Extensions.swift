@@ -368,3 +368,82 @@ struct ReducedMotionAnimationModifier<V: Equatable>: ViewModifier {
         content.animation(reduceMotion ? nil : animation, value: value)
     }
 }
+
+// MARK: - Liquid Glass Conditional Modifiers (iOS 26+)
+
+extension View {
+    /// Apply glass effect for toolbar elements on iOS 26+, pixel surface on earlier versions
+    @ViewBuilder
+    func studioGlassToolbar() -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(.regular.interactive())
+        } else {
+            self
+                .background(Color.studioSurface)
+                .overlay {
+                    Rectangle()
+                        .stroke(Color.studioLine, lineWidth: 0.5)
+                }
+        }
+    }
+
+    /// Apply glass effect for floating action buttons on iOS 26+, pixel border on earlier
+    @ViewBuilder
+    func studioGlassFAB() -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(.regular.interactive(), in: .rect(cornerRadius: 0))
+        } else {
+            self
+                .background(Color.studioSurface)
+                .overlay {
+                    Rectangle()
+                        .stroke(Color.studioLine, lineWidth: 1)
+                }
+        }
+    }
+
+    /// Apply glass effect for navigation elements on iOS 26+, surface background on earlier
+    @ViewBuilder
+    func studioGlassNavigation() -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect()
+        } else {
+            self.background(Color.studioSurface)
+        }
+    }
+
+    /// Apply glass effect for pill/chip buttons on iOS 26+, pixel style on earlier
+    @ViewBuilder
+    func studioGlassPill(isSelected: Bool = false) -> some View {
+        if #available(iOS 26, *) {
+            if isSelected {
+                self.glassEffect(.regular.interactive())
+            } else {
+                self.glassEffect(.regular)
+            }
+        } else {
+            self
+                .background(isSelected ? Color.studioPrimary : Color.clear)
+                .overlay {
+                    Rectangle()
+                        .stroke(isSelected ? Color.clear : Color.studioLine, lineWidth: 1)
+                }
+        }
+    }
+
+    /// Apply prominent glass effect for primary actions on iOS 26+, pixel style on earlier
+    @ViewBuilder
+    func studioGlassProminent() -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(.regular.interactive())
+        } else {
+            self
+                .background(Color.studioPrimary)
+                .overlay {
+                    Rectangle()
+                        .stroke(Color.studioBlack, lineWidth: 2)
+                        .padding(2)
+                }
+        }
+    }
+}

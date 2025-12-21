@@ -19,6 +19,9 @@ struct FeedView: View {
     @State private var showActivity = false
     @State private var showSearch = false
     @State private var unreadActivityCount = 0
+    
+    // Size class for adaptive layouts
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private let followService = FollowService()
 
@@ -37,9 +40,9 @@ struct FeedView: View {
 
                     // Tab picker
                     tabPicker
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
-                        .padding(.bottom, 12)
+                        .adaptiveHorizontalPadding(horizontalSizeClass)
+                        .padding(.top, ResponsiveSpacing.small(horizontalSizeClass))
+                        .padding(.bottom, ResponsiveSpacing.small(horizontalSizeClass))
 
                     // Content
                     if vm.isLoading && vm.currentTabParties.isEmpty {
@@ -142,8 +145,8 @@ struct FeedView: View {
                 .foregroundStyle(Color.studioBlack)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color.studioChrome)
         }
+        .studioGlassProminent()
         .buttonStyle(.plain)
         .contentShape(Rectangle())
     }
@@ -191,11 +194,7 @@ struct FeedView: View {
             }
         }
         .padding(.vertical, 12)
-        .background(Color.studioSurface)
-        .overlay {
-            Rectangle()
-                .stroke(Color.studioLine, lineWidth: 0.5)
-        }
+        .studioGlassNavigation()
     }
 
     // MARK: - Invitations Banner
@@ -239,14 +238,14 @@ struct FeedView: View {
                     .font(.system(size: 10, weight: .light))
                     .foregroundStyle(Color.studioMuted)
             }
-            .padding(16)
+            .padding(ResponsiveSpacing.small(horizontalSizeClass))
             .background(Color.studioSurface)
             .overlay {
                 Rectangle()
                     .stroke(Color.studioLine, lineWidth: 0.5)
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 12)
+            .adaptiveHorizontalPadding(horizontalSizeClass)
+            .padding(.top, ResponsiveSpacing.small(horizontalSizeClass))
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
@@ -284,7 +283,9 @@ struct FeedView: View {
                         .tracking(StudioTypography.trackingNormal)
                         .foregroundStyle(Color.studioMuted)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 48)
+                        .safeTextSize(lineLimit: 3)
+                        .adaptiveHorizontalPadding(horizontalSizeClass)
+                        .padding(.horizontal, ResponsiveSpacing.large(horizontalSizeClass))
                 }
             }
 
@@ -303,7 +304,8 @@ struct FeedView: View {
                     .frame(height: 56)
                 }
                 .buttonStyle(.studioPrimary)
-                .padding(.horizontal, 48)
+                .adaptiveHorizontalPadding(horizontalSizeClass)
+                .padding(.horizontal, ResponsiveSpacing.large(horizontalSizeClass))
                 .padding(.top, 8)
             }
 
@@ -359,8 +361,8 @@ struct FeedView: View {
                     }
                     .buttonStyle(.plain)
                     .contentShape(Rectangle())
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
+                    .adaptiveHorizontalPadding(horizontalSizeClass)
+                    .padding(.top, ResponsiveSpacing.small(horizontalSizeClass))
                 }
 
                 // Bottom spacing
@@ -376,6 +378,8 @@ struct FeedView: View {
 struct PartyCard: View {
     let party: Party
     let isActive: Bool
+    
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -384,7 +388,7 @@ struct PartyCard: View {
                 // Background
                 if let coverUrl = party.coverImageUrl {
                     StudioAsyncImage(url: coverUrl, contentMode: .fill)
-                        .frame(height: 200)
+                        .frame(height: ResponsiveHeight.card(for: horizontalSizeClass))
                         .clipped()
                 } else {
                     // Geometric pattern background
@@ -407,7 +411,7 @@ struct PartyCard: View {
                             .stroke(Color.studioLine.opacity(0.3), lineWidth: 0.5)
                         }
                     }
-                    .frame(height: 200)
+                    .frame(height: ResponsiveHeight.card(for: horizontalSizeClass))
                 }
 
                 // Overlay gradient for text readability
@@ -446,7 +450,7 @@ struct PartyCard: View {
                         .font(StudioTypography.headlineMedium)
                         .tracking(StudioTypography.trackingWide)
                         .foregroundStyle(Color.studioPrimary)
-                        .lineLimit(2)
+                        .safeTextSize(lineLimit: 2)
 
                     HStack(spacing: 16) {
                         if let partyDate = party.partyDate {
@@ -467,13 +471,13 @@ struct PartyCard: View {
                                 Text(location.uppercased())
                                     .font(StudioTypography.labelSmall)
                                     .tracking(StudioTypography.trackingNormal)
-                                    .lineLimit(1)
+                                    .safeTextSize(lineLimit: 1)
                             }
                             .foregroundStyle(Color.studioSecondary)
                         }
                     }
                 }
-                .padding(20)
+                .padding(ResponsiveSpacing.horizontal(horizontalSizeClass))
             }
 
             // Footer
@@ -486,8 +490,8 @@ struct PartyCard: View {
                 // Stats
                 statsView
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .adaptiveHorizontalPadding(horizontalSizeClass)
+            .padding(.vertical, ResponsiveSpacing.small(horizontalSizeClass))
             .background(Color.studioSurface)
         }
         .overlay {

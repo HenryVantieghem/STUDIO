@@ -21,6 +21,7 @@ struct PartyDetailView: View {
     @State private var newComment = ""
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     init(party: Party) {
         self.party = party
@@ -39,12 +40,12 @@ struct PartyDetailView: View {
 
                     // Section picker
                     sectionPicker
-                        .padding(.horizontal, 24)
-                        .padding(.top, 20)
+                        .adaptiveHorizontalPadding(horizontalSizeClass)
+                        .padding(.top, ResponsiveSpacing.horizontal(horizontalSizeClass))
 
                     // Content based on selected section
                     sectionContent
-                        .padding(.top, 20)
+                        .padding(.top, ResponsiveSpacing.horizontal(horizontalSizeClass))
                 }
             }
         }
@@ -92,11 +93,7 @@ struct PartyDetailView: View {
                         .font(.system(size: 14, weight: .light))
                         .foregroundStyle(Color.studioChrome)
                         .frame(width: 36, height: 36)
-                        .background(Color.studioSurface)
-                        .overlay {
-                            Rectangle()
-                                .stroke(Color.studioLine, lineWidth: 0.5)
-                        }
+                        .studioGlassFAB()
                 }
             }
         }
@@ -119,7 +116,10 @@ struct PartyDetailView: View {
         }
         .sheet(isPresented: $showAddMedia) {
             AddMediaSheet(partyId: party.id) { mediaType, data, caption in
-                Task { await vm.refreshMedia() }
+                Task {
+                    // Actually upload the media
+                    await vm.addMedia(type: mediaType, data: data, caption: caption)
+                }
             }
         }
         .sheet(isPresented: $showCreatePoll) {
@@ -151,7 +151,7 @@ struct PartyDetailView: View {
             // Cover image or geometric pattern
             if let coverUrl = vm.party.coverImageUrl, URL(string: coverUrl) != nil {
                 StudioAsyncImage(url: coverUrl)
-                    .frame(height: 300)
+                    .frame(height: ResponsiveHeight.header(for: horizontalSizeClass))
                     .clipped()
             } else {
                 // Geometric pattern
@@ -174,7 +174,7 @@ struct PartyDetailView: View {
                         .stroke(Color.studioLine.opacity(0.3), lineWidth: 0.5)
                     }
                 }
-                .frame(height: 300)
+                .frame(height: ResponsiveHeight.header(for: horizontalSizeClass))
             }
 
             // Gradient overlay
@@ -210,12 +210,14 @@ struct PartyDetailView: View {
                     .font(StudioTypography.headlineLarge)
                     .tracking(StudioTypography.trackingWide)
                     .foregroundStyle(Color.studioPrimary)
+                    .safeTextSize(lineLimit: 3)
 
                 // Hosts
                 Text("HOSTED BY \(vm.hostNames.uppercased())")
                     .font(StudioTypography.bodySmall)
                     .tracking(StudioTypography.trackingNormal)
                     .foregroundStyle(Color.studioSecondary)
+                    .safeTextSize(lineLimit: 2)
 
                 // Location and date
                 HStack(spacing: 20) {
@@ -226,6 +228,7 @@ struct PartyDetailView: View {
                             Text(location.uppercased())
                                 .font(StudioTypography.labelSmall)
                                 .tracking(StudioTypography.trackingNormal)
+                                .safeTextSize(lineLimit: 1)
                         }
                         .foregroundStyle(Color.studioMuted)
                     }
@@ -236,6 +239,7 @@ struct PartyDetailView: View {
                                 .font(.system(size: 10, weight: .light))
                             Text(date, style: .date)
                                 .font(StudioTypography.labelSmall)
+                                .safeTextSize(lineLimit: 1)
                         }
                         .foregroundStyle(Color.studioMuted)
                     }
@@ -255,9 +259,9 @@ struct PartyDetailView: View {
                         )
                     }
                 }
-                .padding(.top, 12)
+                .padding(.top, ResponsiveSpacing.small(horizontalSizeClass))
             }
-            .padding(24)
+            .adaptivePadding(horizontalSizeClass)
         }
     }
 
@@ -351,18 +355,14 @@ struct PartyDetailView: View {
                     actionTitle: vm.isHost ? "ADD MEDIA" : nil,
                     action: vm.isHost ? { showAddMedia = true } : nil
                 )
-                .padding(24)
+                .adaptivePadding(horizontalSizeClass)
             } else {
-                LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 2),
-                    GridItem(.flexible(), spacing: 2),
-                    GridItem(.flexible(), spacing: 2)
-                ], spacing: 2) {
+                LazyVGrid(columns: AdaptiveGrid.columns(for: horizontalSizeClass, baseColumns: 3), spacing: AdaptiveGrid.spacing(for: horizontalSizeClass)) {
                     ForEach(vm.media) { item in
                         PartyMediaThumbnail(media: item)
                     }
                 }
-                .padding(.horizontal, 24)
+                .adaptiveHorizontalPadding(horizontalSizeClass)
             }
         }
     }
@@ -403,7 +403,7 @@ struct PartyDetailView: View {
                 }
                 .disabled(newComment.isEmpty)
             }
-            .padding(24)
+            .adaptivePadding(horizontalSizeClass)
 
             Rectangle()
                 .fill(Color.studioLine)
@@ -416,7 +416,7 @@ struct PartyDetailView: View {
                     title: "NO COMMENTS YET",
                     message: "START THE CONVERSATION"
                 )
-                .padding(24)
+                .adaptivePadding(horizontalSizeClass)
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(vm.comments) { comment in
@@ -443,7 +443,7 @@ struct PartyDetailView: View {
                     actionTitle: vm.isHost ? "CREATE POLL" : nil,
                     action: vm.isHost ? { showCreatePoll = true } : nil
                 )
-                .padding(24)
+                .adaptivePadding(horizontalSizeClass)
             } else {
                 LazyVStack(spacing: 20) {
                     ForEach(vm.polls) { poll in
@@ -452,7 +452,7 @@ struct PartyDetailView: View {
                         }
                     }
                 }
-                .padding(24)
+                .adaptivePadding(horizontalSizeClass)
             }
         }
     }
@@ -476,7 +476,7 @@ struct PartyDetailView: View {
                 .frame(height: 56)
             }
             .buttonStyle(.studioPrimary)
-            .padding(.horizontal, 24)
+            .adaptiveHorizontalPadding(horizontalSizeClass)
 
             // Status list
             if vm.statuses.isEmpty {
@@ -491,7 +491,7 @@ struct PartyDetailView: View {
                         StatusRow(status: status)
                     }
                 }
-                .padding(.horizontal, 24)
+                .adaptiveHorizontalPadding(horizontalSizeClass)
             }
         }
         .padding(.top, 4)
@@ -528,6 +528,8 @@ struct PartyMediaThumbnail: View {
 
 struct StatusRow: View {
     let status: PartyStatus
+    
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var vibeLevel: VibeLevel? {
         VibeLevel(rawValue: status.value)
@@ -543,6 +545,7 @@ struct StatusRow: View {
                         .font(StudioTypography.labelSmall)
                         .tracking(StudioTypography.trackingNormal)
                         .foregroundStyle(Color.studioPrimary)
+                        .safeTextSize(lineLimit: 1)
 
                     Text(status.createdAt, style: .relative)
                         .font(StudioTypography.labelSmall)
@@ -554,6 +557,7 @@ struct StatusRow: View {
                         .font(StudioTypography.labelSmall)
                         .tracking(StudioTypography.trackingNormal)
                         .foregroundStyle(Color.studioMuted)
+                        .safeTextSize(lineLimit: 2)
                 }
             }
 
@@ -571,7 +575,7 @@ struct StatusRow: View {
                 }
             }
         }
-        .padding(20)
+        .padding(ResponsiveSpacing.horizontal(horizontalSizeClass))
         .background(Color.studioSurface)
         .overlay {
             Rectangle()

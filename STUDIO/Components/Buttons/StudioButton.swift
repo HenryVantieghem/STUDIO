@@ -314,6 +314,190 @@ extension ButtonStyle where Self == StudioHeroButtonStyle {
     static var studioHero: StudioHeroButtonStyle { StudioHeroButtonStyle() }
 }
 
+// MARK: - Glass-Aware Adaptive Button Styles (iOS 26+)
+
+/// Primary button that uses Liquid Glass on iOS 26+, pixel style on earlier versions
+struct StudioAdaptivePrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        if #available(iOS 26, *) {
+            // iOS 26+ Liquid Glass style
+            configuration.label
+                .font(.custom(pixelFontName, size: StudioButtonSizes.primaryFont))
+                .tracking(StudioTypography.trackingStandard)
+                .textCase(.uppercase)
+                .foregroundStyle(isEnabled ? Color.studioPrimary : Color.studioMuted)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: StudioButtonSizes.buttonHeight)
+                .glassEffect(.regular.interactive())
+                .opacity(configuration.isPressed ? 0.7 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+                .onChange(of: configuration.isPressed) { _, isPressed in
+                    if isPressed && isEnabled {
+                        HapticManager.shared.mediumTap()
+                    }
+                }
+        } else {
+            // Pre-iOS 26: Original pixel style
+            configuration.label
+                .font(.custom(pixelFontName, size: StudioButtonSizes.primaryFont))
+                .tracking(StudioTypography.trackingStandard)
+                .textCase(.uppercase)
+                .foregroundStyle(isEnabled ? Color.studioBlack : Color.studioMuted)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: StudioButtonSizes.buttonHeight)
+                .background {
+                    if isEnabled {
+                        Color.studioPrimary
+                    } else {
+                        Color.studioMuted.opacity(0.2)
+                    }
+                }
+                .overlay {
+                    Rectangle()
+                        .stroke(Color.studioBlack, lineWidth: 2)
+                        .padding(2)
+                }
+                .opacity(configuration.isPressed ? 0.7 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+                .onChange(of: configuration.isPressed) { _, isPressed in
+                    if isPressed && isEnabled {
+                        HapticManager.shared.mediumTap()
+                    }
+                }
+        }
+    }
+}
+
+/// Secondary button that uses Liquid Glass on iOS 26+, pixel style on earlier versions
+struct StudioAdaptiveSecondaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        if #available(iOS 26, *) {
+            // iOS 26+ Liquid Glass style
+            configuration.label
+                .font(.custom(pixelFontName, size: StudioButtonSizes.secondaryFont))
+                .tracking(StudioTypography.trackingStandard)
+                .textCase(.uppercase)
+                .foregroundStyle(isEnabled ? Color.studioPrimary : Color.studioMuted)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: StudioButtonSizes.buttonHeight)
+                .glassEffect(.regular)
+                .opacity(configuration.isPressed ? 0.6 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+                .onChange(of: configuration.isPressed) { _, isPressed in
+                    if isPressed && isEnabled {
+                        HapticManager.shared.lightTap()
+                    }
+                }
+        } else {
+            // Pre-iOS 26: Original pixel style
+            configuration.label
+                .font(.custom(pixelFontName, size: StudioButtonSizes.secondaryFont))
+                .tracking(StudioTypography.trackingStandard)
+                .textCase(.uppercase)
+                .foregroundStyle(isEnabled ? Color.studioPrimary : Color.studioMuted)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: StudioButtonSizes.buttonHeight)
+                .background(Color.studioBlack)
+                .overlay {
+                    Rectangle()
+                        .stroke(
+                            isEnabled ? Color.studioPrimary : Color.studioLine,
+                            lineWidth: 2
+                        )
+                }
+                .opacity(configuration.isPressed ? 0.6 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+                .onChange(of: configuration.isPressed) { _, isPressed in
+                    if isPressed && isEnabled {
+                        HapticManager.shared.lightTap()
+                    }
+                }
+        }
+    }
+}
+
+/// Hero button that uses Liquid Glass on iOS 26+, pixel style on earlier versions
+struct StudioAdaptiveHeroButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        if #available(iOS 26, *) {
+            // iOS 26+ Liquid Glass style
+            configuration.label
+                .font(.custom(pixelFontName, size: StudioButtonSizes.heroFont))
+                .tracking(StudioTypography.trackingWide)
+                .textCase(.uppercase)
+                .foregroundStyle(isEnabled ? Color.studioPrimary : Color.studioMuted)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: StudioButtonSizes.heroHeight)
+                .glassEffect(.regular.interactive())
+                .opacity(configuration.isPressed ? 0.8 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+                .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
+                .onChange(of: configuration.isPressed) { _, isPressed in
+                    if isPressed && isEnabled {
+                        HapticManager.shared.heavyTap()
+                    }
+                }
+        } else {
+            // Pre-iOS 26: Original pixel style
+            configuration.label
+                .font(.custom(pixelFontName, size: StudioButtonSizes.heroFont))
+                .tracking(StudioTypography.trackingWide)
+                .textCase(.uppercase)
+                .foregroundStyle(isEnabled ? Color.studioBlack : Color.studioMuted)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: StudioButtonSizes.heroHeight)
+                .background {
+                    if isEnabled {
+                        Color.studioPrimary
+                    } else {
+                        Color.studioMuted.opacity(0.2)
+                    }
+                }
+                .overlay {
+                    ZStack {
+                        Rectangle()
+                            .stroke(Color.studioBlack, lineWidth: 2)
+                        Rectangle()
+                            .stroke(Color.studioBlack, lineWidth: 1)
+                            .padding(4)
+                    }
+                }
+                .opacity(configuration.isPressed ? 0.8 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+                .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
+                .onChange(of: configuration.isPressed) { _, isPressed in
+                    if isPressed && isEnabled {
+                        HapticManager.shared.heavyTap()
+                    }
+                }
+        }
+    }
+}
+
+// MARK: - Adaptive ButtonStyle Extensions
+
+extension ButtonStyle where Self == StudioAdaptivePrimaryButtonStyle {
+    static var studioAdaptivePrimary: StudioAdaptivePrimaryButtonStyle { StudioAdaptivePrimaryButtonStyle() }
+}
+
+extension ButtonStyle where Self == StudioAdaptiveSecondaryButtonStyle {
+    static var studioAdaptiveSecondary: StudioAdaptiveSecondaryButtonStyle { StudioAdaptiveSecondaryButtonStyle() }
+}
+
+extension ButtonStyle where Self == StudioAdaptiveHeroButtonStyle {
+    static var studioAdaptiveHero: StudioAdaptiveHeroButtonStyle { StudioAdaptiveHeroButtonStyle() }
+}
+
 // MARK: - Preview
 
 #Preview("Pixel Button Styles") {

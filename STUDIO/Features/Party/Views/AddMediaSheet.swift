@@ -9,6 +9,7 @@
 import SwiftUI
 import PhotosUI
 import AVFoundation
+import AVKit
 import UIKit
 import Combine
 
@@ -32,6 +33,7 @@ struct AddMediaSheet: View {
 
     // Capture state
     @State private var capturedImage: UIImage?
+    @State private var capturedVideoURL: URL?
     @State private var caption = ""
 
     // Upload state
@@ -49,8 +51,11 @@ struct AddMediaSheet: View {
 
                 VStack(spacing: 0) {
                     if let image = capturedImage ?? selectedImage {
-                        // Preview mode
+                        // Preview mode (image)
                         previewView(image: image)
+                    } else if let videoURL = capturedVideoURL {
+                        // Preview mode (video)
+                        videoPreviewView(videoURL: videoURL)
                     } else {
                         // Selection mode
                         selectionView
@@ -69,7 +74,7 @@ struct AddMediaSheet: View {
                     .foregroundStyle(Color.studioMuted)
                 }
 
-                if capturedImage != nil || selectedImage != nil {
+                if capturedImage != nil || selectedImage != nil || capturedVideoURL != nil {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
                             Task {
@@ -106,10 +111,18 @@ struct AddMediaSheet: View {
                 Text("Please enable camera access in Settings to capture photos")
             }
             .fullScreenCover(isPresented: $showCamera) {
-                CameraCaptureView { image in
-                    capturedImage = image
-                    showCamera = false
-                }
+                CameraCaptureView(
+                    onImageCapture: { image in
+                        capturedImage = image
+                        capturedVideoURL = nil
+                        showCamera = false
+                    },
+                    onVideoCapture: { videoURL in
+                        capturedVideoURL = videoURL
+                        capturedImage = nil
+                        showCamera = false
+                    }
+                )
             }
             .onChange(of: selectedItem) { _, newValue in
                 Task {
@@ -357,33 +370,112 @@ struct AddMediaSheet: View {
 
     private func clearSelection() {
         capturedImage = nil
+        capturedVideoURL = nil
         selectedImage = nil
         selectedImageData = nil
         selectedItem = nil
         caption = ""
     }
 
+    // MARK: - Video Preview View
+
+    private func videoPreviewView(videoURL: URL) -> some View {
+        VStack(spacing: 0) {
+            // Video preview
+            ZStack {
+                Color.studioDeepBlack
+
+                VideoPlayer(player: AVPlayer(url: videoURL))
+                    .aspectRatio(16/9, contentMode: .fit)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 300)
+
+            // Divider
+            Rectangle()
+                .fill(Color.studioLine)
+                .frame(height: 0.5)
+
+            // Caption input
+            VStack(alignment: .leading, spacing: 12) {
+                Text("CAPTION (OPTIONAL)")
+                    .font(StudioTypography.labelSmall)
+                    .tracking(StudioTypography.trackingWide)
+                    .foregroundStyle(Color.studioMuted)
+
+                TextField("", text: $caption, prompt: Text("Add a caption...")
+                    .font(StudioTypography.bodyMedium)
+                    .foregroundStyle(Color.studioMuted))
+                    .font(StudioTypography.bodyMedium)
+                    .foregroundStyle(Color.studioPrimary)
+                    .textInputAutocapitalization(.sentences)
+                    .padding()
+                    .background(Color.studioSurface)
+                    .overlay {
+                        Rectangle()
+                            .stroke(Color.studioLine, lineWidth: 0.5)
+                    }
+            }
+            .padding(16)
+
+            // Clear selection button
+            Button {
+                clearSelection()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .light))
+                    Text("CHOOSE DIFFERENT")
+                        .font(StudioTypography.labelSmall)
+                        .tracking(StudioTypography.trackingNormal)
+                }
+                .foregroundStyle(Color.studioMuted)
+                .padding(.vertical, 12)
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+        }
+        .background(Color.studioBlack)
+    }
+
     // MARK: - Upload Media
 
     private func uploadMedia() async {
-        guard let image = capturedImage ?? selectedImage else { return }
-
         isUploading = true
+        error = nil
 
-        // Compress image
-        let mediaService = MediaService()
-        guard let compressedData = mediaService.compressImage(image) else {
-            error = MediaUploadError.compressionFailed
+        do {
+            if let image = capturedImage ?? selectedImage {
+                // Upload photo
+                let mediaService = MediaService()
+                guard let compressedData = mediaService.compressImage(image) else {
+                    error = MediaUploadError.compressionFailed
+                    showError = true
+                    isUploading = false
+                    return
+                }
+
+                // Call callback with data
+                onMediaAdded?(.photo, compressedData, caption.isEmpty ? nil : caption)
+            } else if let videoURL = capturedVideoURL {
+                // Upload video
+                let videoData = try Data(contentsOf: videoURL)
+                onMediaAdded?(.video, videoData, caption.isEmpty ? nil : caption)
+            } else {
+                error = MediaUploadError.uploadFailed
+                showError = true
+                isUploading = false
+                return
+            }
+
+            isUploading = false
+            dismiss()
+        } catch {
+            self.error = error
             showError = true
             isUploading = false
-            return
         }
-
-        // Call callback with data
-        onMediaAdded?(.photo, compressedData, caption.isEmpty ? nil : caption)
-
-        isUploading = false
-        dismiss()
     }
 }
 
@@ -407,10 +499,12 @@ enum MediaUploadError: LocalizedError {
 
 /// Full screen camera capture view
 struct CameraCaptureView: View {
-    var onCapture: (UIImage) -> Void
+    var onImageCapture: (UIImage) -> Void
+    var onVideoCapture: (URL) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var cameraModel = CameraModel()
+    @State private var isRecording = false
 
     var body: some View {
         ZStack {
@@ -457,23 +551,39 @@ struct CameraCaptureView: View {
                     Spacer()
 
                     Button {
-                        cameraModel.capturePhoto { image in
-                            if let image = image {
-                                onCapture(image)
+                        if isRecording {
+                            cameraModel.stopRecording { videoURL in
+                                if let videoURL = videoURL {
+                                    onVideoCapture(videoURL)
+                                }
+                            }
+                            isRecording = false
+                        } else {
+                            cameraModel.capturePhoto { image in
+                                if let image = image {
+                                    onImageCapture(image)
+                                }
                             }
                         }
                     } label: {
                         ZStack {
                             Circle()
-                                .stroke(Color.studioPrimary, lineWidth: 3)
+                                .stroke(isRecording ? Color.red : Color.studioPrimary, lineWidth: 3)
                                 .frame(width: 72, height: 72)
 
                             Circle()
-                                .fill(Color.studioPrimary)
+                                .fill(isRecording ? Color.red : Color.studioPrimary)
                                 .frame(width: 60, height: 60)
                         }
                     }
                     .buttonStyle(.plain)
+                    .simultaneousGesture(
+                        LongPressGesture(minimumDuration: 0.5)
+                            .onEnded { _ in
+                                cameraModel.startRecording()
+                                isRecording = true
+                            }
+                    )
 
                     Spacer()
                 }
@@ -493,17 +603,23 @@ struct CameraCaptureView: View {
 
 /// Camera session manager
 @Observable
+@MainActor
 class CameraModel: NSObject {
     let session = AVCaptureSession()
     private var photoOutput = AVCapturePhotoOutput()
+    private var videoOutput = AVCaptureMovieFileOutput()
     private var captureCompletion: ((UIImage?) -> Void)?
+    private var videoCompletion: ((URL?) -> Void)?
+    private var videoOutputURL: URL?
 
     var flashMode: AVCaptureDevice.FlashMode = .off
+    var isRecording = false
 
     func configure() async {
         guard await AVCaptureDevice.requestAccess(for: .video) else { return }
 
         session.beginConfiguration()
+        session.sessionPreset = .photo
 
         // Video input
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
@@ -515,13 +631,23 @@ class CameraModel: NSObject {
 
         session.addInput(input)
 
-        // Photo output
-        guard session.canAddOutput(photoOutput) else {
-            session.commitConfiguration()
-            return
+        // Audio input for video recording
+        if let audioDevice = AVCaptureDevice.default(for: .audio),
+           let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
+           session.canAddInput(audioInput) {
+            session.addInput(audioInput)
         }
 
-        session.addOutput(photoOutput)
+        // Photo output
+        if session.canAddOutput(photoOutput) {
+            session.addOutput(photoOutput)
+        }
+
+        // Video output
+        if session.canAddOutput(videoOutput) {
+            session.addOutput(videoOutput)
+        }
+
         session.commitConfiguration()
 
         // Start session
@@ -546,18 +672,58 @@ class CameraModel: NSObject {
 
         photoOutput.capturePhoto(with: settings, delegate: self)
     }
+
+    func startRecording() {
+        guard !isRecording else { return }
+        
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mov")
+        
+        videoOutputURL = tempURL
+        isRecording = true
+        videoOutput.startRecording(to: tempURL, recordingDelegate: self)
+    }
+
+    func stopRecording(completion: @escaping (URL?) -> Void) {
+        guard isRecording else {
+            completion(nil)
+            return
+        }
+        
+        videoCompletion = completion
+        videoOutput.stopRecording()
+    }
 }
 
 extension CameraModel: AVCapturePhotoCaptureDelegate {
-    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+    nonisolated func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         guard error == nil,
               let data = photo.fileDataRepresentation(),
               let image = UIImage(data: data) else {
-            captureCompletion?(nil)
+            Task { @MainActor in
+                self.captureCompletion?(nil)
+            }
             return
         }
 
-        captureCompletion?(image)
+        Task { @MainActor in
+            self.captureCompletion?(image)
+        }
+    }
+}
+
+extension CameraModel: AVCaptureFileOutputRecordingDelegate {
+    nonisolated func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+        Task { @MainActor in
+            self.isRecording = false
+            
+            if let error = error {
+                self.videoCompletion?(nil)
+            } else {
+                self.videoCompletion?(outputFileURL)
+            }
+        }
     }
 }
 
